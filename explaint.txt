@@ -1,0 +1,45 @@
+24/01/2026
+1. Dane o kredycie (Parametry wejściowe)
+    loan_amnt (Wnioskowana kwota kredytu): Kwota, o którą prosił klient (np. 20 000 USD).
+
+    term (Okres kredytowania): Czas spłaty, zazwyczaj 36 miesięcy (3 lata) lub 60 miesięcy (5 lat).
+
+    int_rate (Oprocentowanie): Stopa procentowa kredytu. Wyższy procent oznacza, że bank uważał klienta za bardziej ryzykownego.
+
+    installment (Rata miesięczna): Wysokość miesięcznej płatności.
+
+    purpose (Cel kredytu): Na co klient chce wydać pieniądze (np. "debt_consolidation" - spłata innych długów, "home_improvement" - remont).
+
+    application_type (Typ wniosku): Czy kredyt bierze jedna osoba ("Individual") czy dwie ("Joint App").
+
+2. Profil kredytobiorcy (Dane finansowe)
+    annual_inc (Roczny dochód): Deklarowany roczny przychód kredytobiorcy.
+
+    emp_length (Staż pracy): Jak długo klient pracuje na obecnym stanowisku (np. "10+ years").
+
+    home_ownership (Status mieszkaniowy): Czy klient wynajmuje ("RENT"), ma kredyt hipoteczny ("MORTGAGE") czy własność ("OWN").
+
+    dti (Debt-to-Income) (Wskaźnik zadłużenia): Stosunek miesięcznych rat innych długów do miesięcznego dochodu. Im niższy, tym lepiej.
+
+3. Ocena ryzyka przez bank (Istniejący scoring)
+    grade / sub_grade: (Ocena wiarygodności kredytowej). Skala od A (najlepszy) do G (najgorszy). 
+
+4. Problemy ze spłatą i Windykacja (⚠️ Data Leakage / Wyciek danych)
+    hardship_flag: (Flaga trudności). Czy klient jest objęty planem pomocy?
+
+    hardship_amount: (Kwota ulgi). O ile obniżono miesięczną ratę.
+
+    hardship_payoff_balance_amount: (Saldo zadłużenia przy restrukturyzacji). Ile długu zostało w momencie przystąpienia do programu.
+
+    hardship_last_payment_amount: (Ostatnia rata w trudnościach). Ostatnia wpłata dokonana w ramach planu naprawczego.
+
+Settlement (Ugoda / Umorzenie długu)
+    debt_settlement_flag: (Flaga ugody). Czy doszło do ugody z dłużnikiem? (Jeśli tak, to kredyt jest definitywnie "zły").
+
+    settlement_date: (Data ugody). Kiedy podpisano ugodę.
+
+    settlement_amount: (Kwota ugody). Na jaką (zmniejszoną) kwotę spłaty zgodził się bank.
+
+    settlement_percentage: (Procent ugody). Jaki procent pierwotnego długu ma zostać spłacony.
+
+    settlement_term: (Okres spłaty ugody). W ilu ratach ma zostać spłacona ta uzgodniona kwota.
