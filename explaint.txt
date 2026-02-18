@@ -43,3 +43,36 @@ Settlement (Ugoda / Umorzenie długu)
     settlement_percentage: (Procent ugody). Jaki procent pierwotnego długu ma zostać spłacony.
 
     settlement_term: (Okres spłaty ugody). W ilu ratach ma zostać spłacona ta uzgodniona kwota.
+
+
+18/02/2026 
+HISTORIA ZMIAN I DOKUMENTACJA PROJEKTU
+Wersja: 2.0.0
+
+--- LOG ZMIAN ---
+
+v1.0.0 (Inicjalizacja):
+- Wstępne ładowanie danych z Lending Club.
+- Podstawowy podział na zbiór treningowy i testowy.
+
+v1.1.0 (Czyszczenie i Poprawki):
+- Naprawiono błąd "KeyError" w analizie korelacji (analiza_danych.ipynb).
+- Dodano filtrowanie statusów: usunięto kredyty "Current", zostawiając tylko zakończone ("Fully Paid", "Charged Off").
+- Wykryto i usunięto zjawisko "Data Leakage" (zmienne hardship_*, settlement_*).
+
+v1.2.0 (Inżynieria Cech):
+- Dodano nową cechę: 'loan_to_income' (stosunek kredytu do dochodu).
+- Wdrożono model Random Forest z parametrem class_weight='balanced'.
+- Poprawiono precyzję modelu dla klasy wysokiego ryzyka (Default).
+
+v2.0.0 (Finalizacja Systemu):
+- Pełna polonizacja komentarzy w plikach .py oraz .ipynb.
+- Integracja biblioteki SHAP w app.py (wyjaśnialność modelu - XAI).
+- Dodano kalkulator raty miesięcznej w interfejsie użytkownika.
+- Dostosowanie struktury pod szablon pracy dyplomowej WSZiB.
+
+--- KLUCZOWE PLIKI ---
+1. analiza_danych.ipynb - Proces EDA i czyszczenie danych.
+2. model_training.ipynb - Trening lasu losowego i metryki.
+3. app.py - Interaktywny interfejs w Streamlit.
+4. credit_model.pkl - Zapisany stan wytrenowanej sieci.
