@@ -1,48 +1,33 @@
 24/01/2026
-1. Dane o kredycie (Parametry wejściowe)
-    loan_amnt (Wnioskowana kwota kredytu): Kwota, o którą prosił klient (np. 20 000 USD).
 
-    term (Okres kredytowania): Czas spłaty, zazwyczaj 36 miesięcy (3 lata) lub 60 miesięcy (5 lat).
+SPECYFIKACJA DANYCH I ARCHITEKTURA PARAMETRÓW Wersja: 1.0.0 (Baseline Data Schema)
 
-    int_rate (Oprocentowanie): Stopa procentowa kredytu. Wyższy procent oznacza, że bank uważał klienta za bardziej ryzykownego.
+--- STRUKTURA CECH (FEATURES) — LOG ANALITYCZNY ---
 
-    installment (Rata miesięczna): Wysokość miesięcznej płatności.
+1. Parametry wejściowe kredytu:
+- loan_amnt: Kwota wnioskowana (kapitał bazowy).
+- term: Okres spłaty (36/60 miesięcy) — kluczowy dla obliczenia ekspozycji na ryzyko.
+- int_rate: Koszt kapitału (oprocentowanie) — indykator postrzeganego ryzyka przez bank.
+- installment: Stałe obciążenie miesięczne (rata).
+- purpose: Kategoryzacja celu kredytowego (np. konsolidacja, remont).
+- application_type: Tryb wnioskowania (indywidualny vs wspólny).
 
-    purpose (Cel kredytu): Na co klient chce wydać pieniądze (np. "debt_consolidation" - spłata innych długów, "home_improvement" - remont).
+2. Profil finansowy wnioskodawcy:
+- annual_inc: Całkowity deklarowany dochód roczny.
+- emp_length: Staż pracy — miernik stabilności zawodowej.
+- home_ownership: Status majątkowy (własność, hipoteka, wynajem).
+- dti (Debt-to-Income): Kluczowy wskaźnik wydolności finansowej (relacja długu do dochodu).
 
-    application_type (Typ wniosku): Czy kredyt bierze jedna osoba ("Individual") czy dwie ("Joint App").
+3. Klasyfikacja ryzyka (Scoring):
+- grade / sub_grade: Wewnętrzna ocena wiarygodności (alfabetyczna skala jakościowa).
 
-2. Profil kredytobiorcy (Dane finansowe)
-    annual_inc (Roczny dochód): Deklarowany roczny przychód kredytobiorcy.
+4. Zmienne krytyczne (Identyfikacja Data Leakage):
+- hardship_*: Parametry planów pomocowych (flagowanie trudności, kwoty ulg, salda restrukturyzacji).
+- settlement_*: Parametry procesów ugodowych (kwoty i daty ugód, procent umorzenia, okresy spłaty ugodowej).
 
-    emp_length (Staż pracy): Jak długo klient pracuje na obecnym stanowisku (np. "10+ years").
-
-    home_ownership (Status mieszkaniowy): Czy klient wynajmuje ("RENT"), ma kredyt hipoteczny ("MORTGAGE") czy własność ("OWN").
-
-    dti (Debt-to-Income) (Wskaźnik zadłużenia): Stosunek miesięcznych rat innych długów do miesięcznego dochodu. Im niższy, tym lepiej.
-
-3. Ocena ryzyka przez bank (Istniejący scoring)
-    grade / sub_grade: (Ocena wiarygodności kredytowej). Skala od A (najlepszy) do G (najgorszy). 
-
-4. Problemy ze spłatą i Windykacja (⚠️ Data Leakage / Wyciek danych)
-    hardship_flag: (Flaga trudności). Czy klient jest objęty planem pomocy?
-
-    hardship_amount: (Kwota ulgi). O ile obniżono miesięczną ratę.
-
-    hardship_payoff_balance_amount: (Saldo zadłużenia przy restrukturyzacji). Ile długu zostało w momencie przystąpienia do programu.
-
-    hardship_last_payment_amount: (Ostatnia rata w trudnościach). Ostatnia wpłata dokonana w ramach planu naprawczego.
-
-Settlement (Ugoda / Umorzenie długu)
-    debt_settlement_flag: (Flaga ugody). Czy doszło do ugody z dłużnikiem? (Jeśli tak, to kredyt jest definitywnie "zły").
-
-    settlement_date: (Data ugody). Kiedy podpisano ugodę.
-
-    settlement_amount: (Kwota ugody). Na jaką (zmniejszoną) kwotę spłaty zgodził się bank.
-
-    settlement_percentage: (Procent ugody). Jaki procent pierwotnego długu ma zostać spłacony.
-
-    settlement_term: (Okres spłaty ugody). W ilu ratach ma zostać spłacona ta uzgodniona kwota.
+--- KLUCZOWE WNIOSKI ANALITYCZNE ---
+Identyfikacja wycieku danych: Zmienne z sekcji "Settlement" i "Hardship" muszą zostać wykluczone z procesu trenowania, aby zapobiec sztucznemu zawyżeniu precyzji modelu.
+Korelacja DTI: Wskaźnik Debt-to-Income zostaje wyznaczony як główny predyktor w modelu bazowym.
 
 
 18/02/2026 
@@ -76,3 +61,29 @@ v2.0.0 (Finalizacja Systemu):
 2. model_training.ipynb - Trening lasu losowego i metryki.
 3. app.py - Interaktywny interfejs w Streamlit.
 4. credit_model.pkl - Zapisany stan wytrenowanej sieci.
+
+25/02/2026
+HISTORIA ZMIAN I DOKUMENTACJA PROJEKTU Wersja: 3.0.0
+
+--- LOG ZMIAN ---
+
+v3.0.0 (Zgodność z KNF i Hybrydowa Logika Biznesowa):
+- Wdrożenie modułu "Legal Gatekeeper": Dodano weryfikację obywatelstwa oraz ważności Karty Pobytu dla obcokrajowców (warunek konieczny przed analizą ML).
+
+Integracja Rekomendacji T (KNF):
+- Implementacja wskaźnika DSTI (Debt Service to Income) z limitami 50% (dochód standardowy) oraz 65% (dochód powyżej średniej).
+- Wprowadzenie progu minimum socjalnego (2000 PLN netto) korygowanego o liczbę osób na utrzymaniu.
+
+Architektura Hybrid AI:
+- Połączenie predykcji modelu Random Forest z systemem wag eksperckich (korekty punktowe za formę zatrudnienia: Umowa o pracę vs Umowy cywilnoprawne).
+- Dodanie logiki "Graph Risk" dla oceny stabilności pracodawcy.
+
+Stabilizacja UI i XAI:
+- Naprawa błędów konfiguracyjnych Streamlit (StreamlitAPIException).
+- Optymalizacja modułu SHAP: przejście na stabilne generowanie wykresów statycznych (Matplotlib backend) w celu uniknięcia błędów renderowania JavaScript.
+
+--- KLUCZOWE PLIKI (Aktualizacja) ---
+- analiza_danych.ipynb - Rozszerzony proces EDA o analizę zmiennych demograficznych.
+- model_training.ipynb - Model zbalansowany, przygotowany pod hybrydowy system decyzyjny.
+- app.py - Kompletny system klasy bankowej (Compliance + AI + XAI).
+- credit_model.pkl - Wytrenowany klasyfikator ryzyka (6 cech bazowych).
