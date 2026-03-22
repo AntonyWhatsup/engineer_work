@@ -57,7 +57,7 @@ if model:
     explainer = shap.TreeExplainer(model)
 
 # ==============================================================================
-# 3. PANEL BOCZNY (Sidebar) - Informacje o systemie
+# 3. PANEL BOCZNY (Sidebar) - Informacje o systemie i Konfiguracja
 # ==============================================================================
 with st.sidebar:
     st.image("https://img.icons8.com/color/96/000000/poland-circular.png", width=60)
@@ -67,12 +67,22 @@ with st.sidebar:
     
     st.info("""
     **Proces Weryfikacji Wniosku:**
-    1. 🛂 **Weryfikacja Prawna:** Sprawdzenie statusu pobytu i obywatelstwa.
-    2. ⚖️ **Zgodność z KNF:** Analiza wskaźnika DSTI oraz minimum socjalnego.
-    3. 🧠 **Model Scoringowy:** Predykcja prawdopodobieństwa spłaty (ML).
-    4. 🔍 **XAI:** Wyjaśnienie decyzji algorytmu.
+    1. 🛂 **Weryfikacja Prawna:** Sprawdzenie statusu pobytu.
+    2. ⚖️ **Zgodność z KNF:** Analiza wskaźnika DSTI.
+    3. 🧠 **Model Scoringowy:** Predykcja spłaty (ML).
+    4. 🔍 **XAI:** Wyjaśnienie decyzji.
     """)
-    st.caption("Wersja systemu: 3.1.0 (Stable Branch)")
+    
+    st.markdown("---")
+    st.subheader("⚙️ Parametry KNF (Konfiguracja)")
+    # Użytkownik może dynamicznie dostosować limity KNF i minimum socjalne
+    base_social_min = st.number_input("Bazowe minimum socjalne (PLN)", value=1300, step=100)
+    dep_social_min = st.number_input("Dodatek na osobę na utrzymaniu (PLN)", value=900, step=100)
+    dsti_standard = st.slider("Limit DSTI (Standard) %", 10.0, 100.0, 50.0, step=1.0)
+    dsti_premium = st.slider("Limit DSTI (Premium) %", 10.0, 100.0, 65.0, step=1.0)
+    income_premium_threshold = st.number_input("Próg dochodu Premium (PLN)", value=7500, step=500)
+    
+    st.caption("Wersja systemu: 3.2.0 (Stable Branch - Dynamic Config)")
 
 # ==============================================================================
 # 4. INTERFEJS GŁÓWNY - Formularz wprowadzania danych
@@ -146,12 +156,12 @@ with col_input2:
             monthly_rate_est = calculate_monthly_payment(loan_req, 0.11, loan_term) # Zakładane RRSO 11%
             total_monthly_burden = monthly_rate_est + other_commitments
             
-            # Obliczenie wskaźnika DSTI (Debt Service to Income)
-            dsti_ratio = (total_monthly_burden / income_netto) * 100
-            dsti_limit = 65.0 if income_netto > 7500 else 50.0
+            # Obliczenie wskaźnika DSTI na podstawie dynamicznych parametrów z paska bocznego
+            dsti_ratio = (total_monthly_burden / income_netto) * 100 if income_netto > 0 else 100
+            dsti_limit = dsti_premium if income_netto > income_premium_threshold else dsti_standard
             
-            # Obliczenie minimum socjalnego (uproszczone)
-            social_min = 1300 + (family_members * 900)
+            # Obliczenie minimum socjalnego z dynamicznych parametrów
+            social_min = base_social_min + (family_members * dep_social_min)
             funds_after_loan = income_netto - total_monthly_burden
             
             st.markdown("#### Wskaźniki Zdolności")
@@ -172,7 +182,7 @@ with col_input2:
 
             # --- KROK 3: MODEL MATEMATYCZNY (AI SCORING) ---
             # Przygotowanie wektora cech dla modelu
-            loan_to_income_val = loan_req / (income_netto * 12)
+            loan_to_income_val = loan_req / (income_netto * 12) if income_netto > 0 else 0
             features = ['annual_inc', 'loan_amnt', 'term', 'fico_range_low', 'dti', 'loan_to_income']
             input_vector = pd.DataFrame([[
                 income_netto * 12, loan_req, loan_term, fico_val, dsti_ratio, loan_to_income_val
@@ -248,6 +258,9 @@ with col_input2:
                 
                 st.pyplot(fig_xai)
                 st.caption("Legenda: Kolor zielony wzmacnia szansę na kredyt, kolor czerwony ją obniża.")
+                
+                # Oczyszczenie pamięci - krytyczne dla Streamlit przy wielokrotnym generowaniu wykresów
+                plt.close(fig_xai) 
 
             except Exception as e:
                 st.warning(f"Moduł wyjaśnień SHAP jest chwilowo niedostępny: {e}")
