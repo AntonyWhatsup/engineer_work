@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Scoringowy Banku</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* ОСНОВНІ СТИЛІ ДЛЯ СТОРІНКИ */
+        body {
+            background-color: #f8f9fa; /* Світло-сірий фон, як у тебе */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin-top: 30px;
+        }
+        
+        /* СТИЛІ ДЛЯ КАРТОК/БЛОКІВ */
+        .sc-card {
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* ЗАГОЛОВКИ БЛОКІВ (ТЕМНО-СИНІ, БОЛД) */
+        .sc-header {
+            background-color: #003366; /* Темно-синій, як на скріні */
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #ddd;
+        }
+        .sc-body {
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        /* КОЛІР КОЛОНОК (СВІТЛО-БЛАКИТНИЙ) */
+        .col-left, .col-right {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .col-left .sc-body {
+            background-color: #e9f2f9; /* Світло-блакитний фон лівої колонки */
+        }
+        .col-right .sc-body {
+            background-color: white;
+        }
+
+        /* БЛОК РІШЕННЯ (З ГРАДІЄНТОМ) */
+        .decision-box {
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .db-success {
+            /* Зелений градієнт для схвалення */
+            background: linear-gradient(135deg, #a8e6cf 0%, #dcedc1 100%);
+            border: 2px solid #8bc34a;
+        }
+        .db-danger {
+            /* Червоний градієнт для відмови */
+            background: linear-gradient(135deg, #ff9a9e 0%, #ffc1c1 100%);
+            border: 2px solid #f44336;
+        }
+
+        /* ГРАФІК SHAP */
+        .shap-plot {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .shap-plot img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* СТИЛІ ДЛЯ СЛАЙДЕРА (СИНІЙ КОЛІР) */
+        .form-range::-webkit-slider-thumb {
+            background: #007bff;
+        }
+        .form-range::-moz-range-thumb {
+            background: #007bff;
+        }
+    </style>
+</head>
+<body>
+<div class="container mb-5">
+    <div class="row g-4">
+        
+        <div class="col-md-5 col-left">
+            <div class="sc-card">
+                <div class="sc-header">DANE KLIENTA I KREDYTU</div>
+                <div class="sc-body">
+                    <form method="POST">
+                        <label class="form-label mb-0 fs-6">Citizenship:</label>
+                        <select name="citizenship" class="form-select form-select-sm mb-2">
+                            <option value="PL">Polskie</option>
+                            <option value="UA">Inne/UA</option>
+                        </select>
+                        
+                        <label class="form-label mb-0 fs-6">Income:</label>
+                        <input type="number" name="income" class="form-control form-control-sm mb-2" value="6000" required>
+                        
+                        <label class="form-label mb-0 fs-6">Other Debts:</label>
+                        <input type="number" name="other_debts" class="form-control form-control-sm mb-2" value="0" required>
+                        
+                        <label class="form-label mb-0 fs-6">Dependents:</label>
+                        <input type="number" name="dependents" class="form-control form-control-sm mb-2" value="0" required>
+
+                        <div class="mb-2">
+                            <label class="form-label mb-0 fs-6">Loan Amount:</label>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted fs-7">5 000</span>
+                                <span class="text-muted fs-7">100 000</span>
+                            </div>
+                            <input type="range" name="loan_amount" class="form-range" min="5000" max="100000" step="1000" value="30000">
+                        </div>
+                        
+                        <label class="form-label mb-0 fs-6">Term (months):</label>
+                        <select name="term" class="form-select form-select-sm mb-2">
+                            <option value="36">36 miesięcy</option>
+                            <option value="60">60 miesięcy</option>
+                        </select>
+                        
+                        <label class="form-label mb-0 fs-6">BIK Score (0-100):</label>
+                        <input type="range" name="bik_score" class="form-range mb-2" value="75">
+                        
+                        <label class="form-label mb-0 fs-6">Typ umowy:</label>
+                        <select name="emp_type" class="form-select form-select-sm mb-4">
+                            <option value="nieokreslony">Umowa o pracę (nieokreślony)</option>
+                            <option value="zlecenie">Umowa Zlecenie / Dzieło</option>
+                        </select>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg w-100 fs-5">Analizuj Wniosek</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7 col-right">
+            <div class="sc-card">
+                <div class="sc-header">DECYZJA I WYJAŚNIENIE</div>
+                <div class="sc-body">
+                    {% if error %}
+                        <div class="alert alert-danger mt-3 fs-5 text-center"><b>{{ error }}</b></div>
+                    {% endif %}
+
+                    {% if success %}
+                        <div class="decision-box {% if prob >= 60 %}db-success{% else %}db-danger{% endif %} shadow">
+                            <h3 class="fw-bold text-{% if prob >= 60 %}success{% else %}danger{% endif %}">
+                                Decyzja: {% if prob >= 60 %}ZAAKCEPTOWANO{% else %}ODRZUCONO{% endif %}
+                            </h3>
+                            <div class="row text-center mt-3">
+                                <div class="col-4 fs-6 text-muted">Base AI:<br><span class="fs-5 text-dark">{{ base }}%</span></div>
+                                <div class="col-4 fs-6 text-muted">Adj:<br><span class="fs-5 text-dark">{{ adj }}%</span></div>
+                                <div class="col-4 fs-6 text-muted">DSTI:<br><span class="fs-5 text-dark">{{ dsti }}%</span></div>
+                            </div>
+                            <hr class="my-3">
+                            <div class="row text-center">
+                                <div class="col-4 fs-6 text-muted">Final Score:<br><span class="fs-4 fw-bold text-dark">{{ prob }}%</span></div>
+                                <div class="col-4 fs-6 text-muted">Instalment:<br><span class="fs-4 fw-bold text-dark">{{ rata }} PLN</span></div>
+                                <div class="col-4 fs-6 text-muted">Left on Live:<br><span class="fs-4 fw-bold text-dark">{{ left }} PLN</span></div>
+                            </div>
+                        </div>
+                        
+                        <h5 class="text-center mb-3">Analiza shap dla wybranego kredytobiorcy:</h5>
+                        <div class="shap-plot border rounded p-2 bg-light">
+                            <img src="{{ url_for('static', filename='current_shap.png') }}?t={{ time_stamp }}">
+                        </div>
+                    {% elif not error %}
+                        <div class="text-center text-muted mt-5 pt-5">
+                            <h4>Wprowadź дані і натисніть «Analizuj Вниосек»</h4>
+                            <p>System перевірить умови KNF та згенерує аналіз XAI.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
