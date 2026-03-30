@@ -1,105 +1,150 @@
-from flask import Flask, render_template, request
-import pandas as pd
-import joblib
 import os
-import shap
 import time
+import pandas as pd
+import shap
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import numpy as np
+from flask import Flask, render_template, request
+import joblib
+
+matplotlib.use('Agg')
 
 app = Flask(__name__)
 
-# --- ЗАВАНТАЖЕННЯ МОДЕЛІ ---
-MODEL_PATH = "credit_model.pkl"
-model = joblib.load(MODEL_PATH) if os.path.exists(MODEL_PATH) else None
-explainer = shap.TreeExplainer(model) if model else None
+# static folder
+if not os.path.exists('static'):
+    os.makedirs('static')
 
-def calculate_rata(amount, term, rate=0.12):
-    if term == 0: return 0
-    m_rate = rate / 12
-    return (amount * m_rate) / (1 - (1 + m_rate)**(-term))
+# ✅ LOAD MODEL (fixed)
+model = None
+try:
+    model = joblib.load('credit_model.pkl')
+except Exception as e:
+    print(f"Помилка завантаження моделі: {e}")
+
+# --- CONSTANTS ---
+RATA_FACTOR = 0.02
+DSTI_LIMIT_HIGH = 0.65
+DSTI_LIMIT_LOW = 0.50
+DSTI_INCOME_THRESHOLD = 7500
+MIN_CASH_APPLICANT = 2000
+MIN_CASH_DEPENDENT = 1000
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        try:
-            # Отримуємо всі дані з форми
-            citizenship = request.form.get('citizenship', 'PL')
-            residency = request.form.get('residency', 'Staly')
-            income_m = float(request.form.get('income', 6000))
-            loan_amt = float(request.form.get('loan_amount', 30000))
-            term = int(request.form.get('term', 36))
-            bik = float(request.form.get('bik_score', 50))
-            debts_m = float(request.form.get('other_debts', 0))
-            dependents = int(request.form.get('dependents', 0))
-            emp = request.form.get('emp_type', 'nieokreslony')
-        except ValueError:
-            return render_template('index.html', error="Błąd: Wprowadź poprawne wartości liczbowe.")
 
-        # --- LEGAL CHECK ---
-        if citizenship == "UA" and residency in ["Brak", "Krotki"]:
-            return render_template('index.html', error="⛔ ODMOWA: Brak stabilnego statusu pobytu.")
+        # --- INPUT ---
+        data_inputs = {
+            'loan_amnt': float(request.form.get('loan_amnt', 0)),
+            'term': request.form.get('term', '36'),
+            'citizenship': request.form.get('citizenship', 'UA'),
+            'residency': request.form.get('residency', 'Brak'),
+            'employment_type': request.form.get('employment_type', 'UoP_Nd'),
+            'annual_inc': float(request.form.get('annual_inc', 0)),
+            'dti': float(request.form.get('dti', 0)),
+            'fico': float(request.form.get('fico', 0)),
+            'num_dependents': int(request.form.get('num_dependents', 0))
+        }
 
-        # --- KNF COMPLIANCE ---
-        rata = calculate_rata(loan_amt, term)
-        total_monthly_costs = rata + debts_m
-        
-        dsti = (total_monthly_costs / income_m) * 100 if income_m > 0 else 100
-        dsti_limit = 65.0 if income_m > 7500 else 50.0
-        
-        min_living_required = 2000.0 + (dependents * 1000.0)
-        cash_left = income_m - total_monthly_costs
+        # --- FEATURES (FIXED 🔥) ---
+        term_num = 36 if '36' in data_inputs['term'] else 60
 
-        if dsti > dsti_limit:
-            return render_template('index.html', error=f"⛔ ODMOWA: DSTI ({dsti:.1f}%) przekracza limit {dsti_limit}%.")
-        if cash_left < min_living_required:
-            return render_template('index.html', error=f"⛔ ODMOWA: Zbyt mała kwota na życie ({cash_left:.0f} PLN).")
+        loan_to_income = (
+            data_inputs['loan_amnt'] / data_inputs['annual_inc']
+            if data_inputs['annual_inc'] > 0 else 0
+        )
 
-        # --- ML PREDICTION ---
-        annual_inc = income_m * 12
-        fico = 300 + (bik * 5.5)
-        loan_to_inc = loan_amt / annual_inc if annual_inc > 0 else 0
-        
-        features = ['annual_inc', 'loan_amnt', 'term', 'fico_range_low', 'dti', 'loan_to_income']
-        df_input = pd.DataFrame([[annual_inc, loan_amt, term, fico, dsti, loan_to_inc]], columns=features)
-        
-        base_prob = model.predict_proba(df_input)[0][1]
-        adj = 0.10 if "nieokreslony" in emp else -0.15
-        final_prob = max(0.0, min(1.0, base_prob + adj))
+        input_df = pd.DataFrame([{
+            'loan_amnt': data_inputs['loan_amnt'],
+            'term': term_num,
+            'annual_inc': data_inputs['annual_inc'],
+            'dti': data_inputs['dti'],
+            'fico_range_low': data_inputs['fico'],
+            'loan_to_income': loan_to_income   # ✅ ВАЖЛИВО
+        }])
 
-        # --- SHAP (XAI) ---
-        plt.clf()
-        shap_values = explainer.shap_values(df_input)
-        
-        # Захист від різних версій бібліотеки SHAP
-        if isinstance(shap_values, list):
-            v = shap_values[1][0]
-        elif len(shap_values.shape) == 3:
-            v = shap_values[0, :, 1]
-        else:
-            v = shap_values[0]
-            
-        fig, ax = plt.subplots(figsize=(8, 4))
-        idx = np.argsort(v)
-        ax.barh(np.array(features)[idx], np.array(v)[idx], color=['#d9534f' if x < 0 else '#5cb85c' for x in np.array(v)[idx]])
-        
-        if not os.path.exists('static'): os.makedirs('static')
-        plot_path = os.path.join('static', 'current_shap.png')
-        plt.tight_layout()
-        plt.savefig(plot_path)
-        plt.close()
+        # --- MODEL ---
+        base_prob = 0.85
+        if model:
+            try:
+                base_prob = model.predict_proba(input_df)[0][1]
+            except Exception as e:
+                print(f"Помилка predict: {e}")
 
-        # time_stamp змусить браузер завантажити нову картинку
-        return render_template('index.html', 
-                               success=True,
-                               prob=round(final_prob*100, 1),
-                               rata=round(rata),
-                               left=round(cash_left),
-                               time_stamp=time.time())
+        # --- HYBRID ---
+        adj = 0
+        emp = data_inputs['employment_type']
+        if emp == 'UoP_Nd': adj = 0.10
+        elif emp == 'UoP_Cz': adj = -0.05
+        elif emp == 'UZ_UdP': adj = -0.15
+        elif emp == 'B2B_12m': adj = 0.05
+        elif emp == 'B2B_lt12m': adj = -0.25
 
-    return render_template('index.html')
+        final_prob = max(0.01, min(0.99, base_prob + adj))
+
+        # --- CALCULATIONS ---
+        monthly_inc = data_inputs['annual_inc'] / 12
+        rata = data_inputs['loan_amnt'] * RATA_FACTOR
+        total_debt_service = rata + (data_inputs['dti'] / 100 * monthly_inc)
+        dsti = (total_debt_service / monthly_inc * 100) if monthly_inc > 0 else 100
+        cash_left = monthly_inc - total_debt_service
+
+        # --- RULES ---
+        rejections = []
+
+        if data_inputs['citizenship'] == 'UA' and data_inputs['residency'] in ['Brak', 'Krotki']:
+            rejections.append("Odmowa: Status rezydencji.")
+
+        limit = DSTI_LIMIT_HIGH if monthly_inc > DSTI_INCOME_THRESHOLD else DSTI_LIMIT_LOW
+        if (dsti / 100) > limit:
+            rejections.append("Odmowa: DSTI limit.")
+
+        required_cash = MIN_CASH_APPLICANT + (data_inputs['num_dependents'] * MIN_CASH_DEPENDENT)
+        if cash_left < required_cash:
+            rejections.append("Odmowa: Za mały dochód.")
+
+        final_decision = "NEGATYWNA" if rejections else "POZYTYWNA"
+
+        # --- SHAP ---
+        shap_img_path = 'static/current_shap.png'
+        if model and hasattr(model, 'estimators_'):
+            try:
+                plt.clf()
+                explainer = shap.TreeExplainer(model)
+                shap_values = explainer.shap_values(input_df)
+
+                shap.force_plot(
+                    explainer.expected_value[1],
+                    shap_values[1],
+                    input_df,
+                    matplotlib=True,
+                    show=False
+                )
+
+                plt.savefig(shap_img_path, bbox_inches='tight', dpi=100)
+
+            except Exception as e:
+                print(f"SHAP error: {e}")
+
+        return render_template(
+            'index.html',
+            success=True,
+            data=data_inputs,
+            base=round(base_prob*100, 1),
+            adj=round(adj*100, 1),
+            prob=round(final_prob*100, 1),
+            rata=round(rata),
+            dsti=round(dsti, 1),
+            left=round(cash_left),
+            decision=final_decision,
+            rejections=rejections,
+            time_stamp=time.time()
+        )
+
+    return render_template('index.html', success=False)
+
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
