@@ -57,12 +57,12 @@ def index():
         )
 
         input_df = pd.DataFrame([{
+            'annual_inc': data_inputs['annual_inc'],
             'loan_amnt': data_inputs['loan_amnt'],
             'term': term_num,
-            'annual_inc': data_inputs['annual_inc'],
-            'dti': data_inputs['dti'],
             'fico_range_low': data_inputs['fico'],
-            'loan_to_income': loan_to_income   # ✅ ВАЖЛИВО
+            'dti': data_inputs['dti'],
+            'loan_to_income': loan_to_income
         }])
 
         # --- MODEL ---
@@ -115,10 +115,20 @@ def index():
                 explainer = shap.TreeExplainer(model)
                 shap_values = explainer.shap_values(input_df)
 
+                if isinstance(shap_values, list):
+                    sv = shap_values[1][0]
+                    ev = explainer.expected_value[1]
+                elif len(shap_values.shape) == 3:  # Новий SHAP (1, 6, 2)
+                    sv = shap_values[0, :, 1]
+                    ev = explainer.expected_value[1]
+                else:
+                    sv = shap_values[0]
+                    ev = explainer.expected_value
+
                 shap.force_plot(
-                    explainer.expected_value[1],
-                    shap_values[1],
-                    input_df,
+                    ev,
+                    sv,
+                    input_df.iloc[0], # Беремо перший рядок (єдиний)
                     matplotlib=True,
                     show=False
                 )

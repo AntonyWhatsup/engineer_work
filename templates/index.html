@@ -308,7 +308,7 @@
                                     <div class="card-title-custom"><i class="fa-solid fa-sack-dollar"></i>Zdolność i Kwoty</div>
                                     <div class="stat-row">
                                         <span class="stat-label">Dochód miesięczny (netto)</span>
-                                        <span class="stat-value">{{ round(data.annual_inc / 12) }} PLN</span>
+                                        <span class="stat-value">{{ (data.annual_inc / 12) | int }} PLN</span>
                                     </div>
                                     <div class="stat-row">
                                         <span class="stat-label">Szacowana rata (nowa)</span>
