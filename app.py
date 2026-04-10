@@ -35,20 +35,38 @@ MIN_CASH_DEPENDENT = 1000
 def index():
     if request.method == 'POST':
 
-        # --- INPUT ---
+        # --- 1. ВАЛІДАЦІЯ ФОРМИ ---
+        required_fields = ['loan_amnt', 'annual_inc', 'dti', 'fico']
+        missing_fields = []
+
+        for field in required_fields:
+            val = request.form.get(field, '').strip()
+            if not val:
+                missing_fields.append(field)
+
+        # Якщо є порожні обов'язкові поля - повертаємо форму з помилками
+        if missing_fields:
+            return render_template(
+                'index.html', 
+                success=False, 
+                missing_fields=missing_fields, 
+                data=request.form  # Зберігаємо те, що користувач вже ввів
+            )
+
+        # --- INPUT (безпечне зчитування після валідації) ---
         data_inputs = {
-            'loan_amnt': float(request.form.get('loan_amnt', 0)),
-            'term': request.form.get('term', '36'),
+            'loan_amnt': float(request.form.get('loan_amnt')),
+            'term': request.form.get('term', '36m'),
             'citizenship': request.form.get('citizenship', 'UA'),
             'residency': request.form.get('residency', 'Brak'),
             'employment_type': request.form.get('employment_type', 'UoP_Nd'),
-            'annual_inc': float(request.form.get('annual_inc', 0)),
-            'dti': float(request.form.get('dti', 0)),
-            'fico': float(request.form.get('fico', 0)),
-            'num_dependents': int(request.form.get('num_dependents', 0))
+            'annual_inc': float(request.form.get('annual_inc')),
+            'dti': float(request.form.get('dti')),
+            'fico': float(request.form.get('fico')),
+            'num_dependents': int(request.form.get('num_dependents', 0) or 0)
         }
 
-        # --- FEATURES (FIXED 🔥) ---
+        # --- FEATURES ---
         term_num = 36 if '36' in data_inputs['term'] else 60
 
         loan_to_income = (
@@ -64,6 +82,12 @@ def index():
             'dti': data_inputs['dti'],
             'loan_to_income': loan_to_income
         }])
+
+        # --- 2. ВИРІВНЮВАННЯ КОЛОНОК ДЛЯ МОДЕЛІ ---
+        if model and hasattr(model, 'feature_names_in_'):
+            expected_cols = model.feature_names_in_
+            # Додаємо відсутні колонки (заповнюємо 0) і ставимо їх у правильному порядку
+            input_df = input_df.reindex(columns=expected_cols, fill_value=0)
 
         # --- MODEL ---
         base_prob = 0.85

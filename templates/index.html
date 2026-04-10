@@ -24,6 +24,12 @@
             overflow-x: hidden;
         }
 
+        /* --- Animations for Grid Sliding --- */
+        .col-transition {
+            transition: flex 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
+                        max-width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
         /* --- Sidebar Style --- */
         .sidebar {
             background-color: var(--bg-card);
@@ -41,7 +47,7 @@
         .brand-subtitle {
             color: var(--text-muted);
             font-size: 0.85rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .form-label {
@@ -66,6 +72,11 @@
             box-shadow: 0 0 0 0.25rem rgba(156, 39, 176, 0.25);
         }
 
+        .is-invalid {
+            border-color: #dc3545 !important;
+            background-color: rgba(220, 53, 69, 0.05) !important;
+        }
+
         .btn-evaluate {
             background: linear-gradient(45deg, var(--primary-purple), #673ab7);
             border: none;
@@ -88,7 +99,6 @@
             padding: 2rem;
         }
 
-        /* --- Custom Tabs Style (Back to Old Format) --- */
         .nav-tabs {
             border-bottom: 1px solid var(--border-color);
             margin-bottom: 1.5rem;
@@ -102,20 +112,15 @@
             background: none;
         }
 
-        .nav-tabs .nav-link:hover {
+        .nav-tabs .nav-link:hover, .nav-tabs .nav-link.active {
             color: white;
             border: none;
         }
-
         .nav-tabs .nav-link.active {
-            color: white;
-            background-color: transparent;
-            border: none;
             border-bottom: 3px solid var(--accent-orange);
             font-weight: bold;
         }
 
-        /* --- Cards Style --- */
         .custom-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -134,26 +139,16 @@
             display: flex;
             align-items: center;
         }
-        
         .card-title-custom i {
             margin-right: 0.5rem;
             color: var(--accent-orange);
         }
 
         .big-number {
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: bold;
-            background: linear-gradient(45deg, var(--accent-orange), #ffeb3b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
             line-height: 1;
         }
-        .unit {
-            font-size: 1.2rem;
-            color: var(--text-muted);
-            margin-left: 0.3rem;
-        }
-
         .stat-row {
             display: flex;
             justify-content: space-between;
@@ -164,121 +159,152 @@
         .stat-value { color: white; font-weight: 500; }
 
         .shap-container {
-            background-color: white; /* Жорстко білий фон для графіка SHAP */
+            background-color: white; 
             padding: 1rem;
             border-radius: 6px;
             margin-top: 1rem;
         }
 
-        /* Alerts */
-        .alert-knf {
-            background-color: rgba(211, 47, 47, 0.1);
-            border: 1px solid #d32f2f;
-            color: #ffcdd2;
+        .alert-knf { background-color: rgba(211, 47, 47, 0.1); border: 1px solid #d32f2f; color: #ffcdd2; }
+        .alert-ok { background-color: rgba(56, 142, 60, 0.1); border: 1px solid #388e3c; color: #c8e6c9; }
+
+        /* --- Inline Help Panel --- */
+        .help-item {
+            margin-bottom: 1.2rem;
+            padding-bottom: 1.2rem;
+            border-bottom: 1px dashed #444;
         }
-        
-        .alert-ok {
-            background-color: rgba(56, 142, 60, 0.1);
-            border: 1px solid #388e3c;
-            color: #c8e6c9;
+        .help-item:last-child { border-bottom: none; }
+        .help-title {
+            color: var(--accent-orange);
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+        }
+        .help-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
 
-<div class="container-fluid p-0">
-    <div class="row g-0">
-        <div class="col-md-3 sidebar">
-            <div class="brand-title">Credit Risk AI Explorer</div>
-            <div class="brand-subtitle">Predict, Adjust, Explain (Hybrid Expert System v3.0)</div>
-            
-            <form action="/" method="post">
-                <div class="mb-3">
-                    <label class="form-label">Gwatantowana kwota (PLN)</label>
-                    <input type="number" name="loan_amnt" class="form-control" placeholder="np. 50000" value="{{ data.loan_amnt if success else '' }}" required>
+<div class="container-fluid p-0 overflow-hidden">
+    <div class="row g-0 w-100 flex-nowrap" style="min-height: 100vh;">
+        
+        <div id="helpContentCol" class="col-0 col-transition" style="max-width: 0; opacity: 0; background-color: var(--bg-card); border-right: 1px solid var(--border-color); overflow-x: hidden; height: 100vh;">
+            <div style="width: 320px; padding: 2rem 1.5rem; overflow-y: auto; height: 100%;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="m-0"><i class="fa-solid fa-circle-info me-2" style="color: var(--primary-purple);"></i> Przewodnik</h5>
+                    <button type="button" class="btn-close btn-close-white" onclick="toggleHelpPanel()"></button>
                 </div>
 
+                <p class="text-muted" style="font-size: 0.85rem;">Wyjaśnienie logiki Hybrydowej (AI + KNF):</p>
+                <div class="help-item">
+                    <div class="help-title">Gwarantowana kwota & Okres</div>
+                    <div class="help-desc">Kwota kredytu oraz czas spłaty. Na ich podstawie kalkulowana jest nowa rata.</div>
+                </div>
+                <div class="help-item">
+                    <div class="help-title">Obywatelstwo & Pobyt</div>
+                    <div class="help-desc">Zasada (Hard Rule): Brak stałego pobytu u obcokrajowców często generuje automatyczną odmowę.</div>
+                </div>
+                <div class="help-item">
+                    <div class="help-title">Rodzaj zatrudnienia</div>
+                    <div class="help-desc">Korekta do wyniku AI: UoP (+10%), B2B krótki (-25%).</div>
+                </div>
+                <div class="help-item">
+                    <div class="help-title">DTI (Debt-to-Income)</div>
+                    <div class="help-desc">Limit max 50-65%. Jeśli nowa rata go przekroczy, odrzucamy z automatu.</div>
+                </div>
+                <div class="help-item">
+                    <div class="help-title">FICO Score</div>
+                    <div class="help-desc">300 (zła historia) do 850 (idealna). To główny silnik predykcji modelu AI.</div>
+                </div>
+                <div class="help-item">
+                    <div class="help-title">Osoby na utrzymaniu</div>
+                    <div class="help-desc">Każda osoba zwiększa "minimum socjalne". Brak wystarczającego dochodu po opłaceniu rat (Dochód rozporządzalny) = Odmowa.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-3 sidebar col-transition" style="min-width: 300px; overflow-y: auto; height: 100vh;">
+            <div class="brand-title">Credit Risk AI Explorer</div>
+            <div class="brand-subtitle">
+                Predict, Adjust, Explain (v3.0)
+                <button class="btn btn-sm btn-outline-secondary mt-3 w-100 text-start" type="button" onclick="toggleHelpPanel()" style="border-color: #444;">
+                    <i class="fa-solid fa-table-columns" style="color: var(--accent-orange);"></i> Pokaż / Ukryj przewodnik
+                </button>
+            </div>
+            
+            <form action="/" method="post" novalidate>
+                <div class="mb-3">
+                    <label class="form-label">Gwatantowana kwota (PLN)</label>
+                    <input type="number" step="any" name="loan_amnt" class="form-control {% if missing_fields and 'loan_amnt' in missing_fields %}is-invalid{% endif %}" placeholder="np. 50000" value="{{ data.loan_amnt if data else '' }}">
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Okres kredytowania</label>
                     <select name="term" class="form-select">
-                        <option value="36m" {% if success and data.term == '36m' %}selected{% endif %}>36 miesięcy</option>
-                        <option value="60m" {% if success and data.term == '60m' %}selected{% endif %}>60 miesięcy</option>
+                        <option value="36m" {% if data and data.term == '36m' %}selected{% endif %}>36 miesięcy</option>
+                        <option value="60m" {% if data and data.term == '60m' %}selected{% endif %}>60 miesięcy</option>
                     </select>
                 </div>
-
                 <div class="row">
                     <div class="col-6 mb-3">
                         <label class="form-label">Obywatelstwo</label>
                         <select name="citizenship" class="form-select">
-                            <option value="PL" {% if success and data.citizenship == 'PL' %}selected{% endif %}>PL</option>
-                            <option value="UA" {% if success and data.citizenship == 'UA' %}selected{% endif %}>UA</option>
-                            <option value="EU" {% if success and data.citizenship == 'EU' %}selected{% endif %}>EU</option>
+                            <option value="PL" {% if data and data.citizenship == 'PL' %}selected{% endif %}>PL</option>
+                            <option value="UA" {% if data and data.citizenship == 'UA' %}selected{% endif %}>UA</option>
                         </select>
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label">Karta pobytu</label>
                         <select name="residency" class="form-select">
-                            <option value="Staly" {% if success and data.residency == 'Staly' %}selected{% endif %}>Stały</option>
-                            <option value="Krotki" {% if success and data.residency == 'Krotki' %}selected{% endif %}>Krótki</option>
-                            <option value="Brak" {% if success and data.residency == 'Brak' %}selected{% endif %}>Brak</option>
+                            <option value="Staly" {% if data and data.residency == 'Staly' %}selected{% endif %}>Stały</option>
+                            <option value="Brak" {% if data and data.residency == 'Brak' %}selected{% endif %}>Brak</option>
                         </select>
                     </div>
                 </div>
-
                 <div class="mb-3">
                     <label class="form-label">Rodzaj zatrudnienia</label>
                     <select name="employment_type" class="form-select">
-                        <option value="UoP_Nd" {% if success and data.employment_type == 'UoP_Nd' %}selected{% endif %}>UoP - czas nieokreślony</option>
-                        <option value="UoP_Cz" {% if success and data.employment_type == 'UoP_Cz' %}selected{% endif %}>UoP - czas określony</option>
-                        <option value="UZ_UdP" {% if success and data.employment_type == 'UZ_UdP' %}selected{% endif %}>Umowa Zlecenie / Dzieło</option>
-                        <option value="B2B_12m" {% if success and data.employment_type == 'B2B_12m' %}selected{% endif %}>B2B (> 12m)</option>
-                        <option value="B2B_lt12m" {% if success and data.employment_type == 'B2B_lt12m' %}selected{% endif %}>B2B (< 12m)</option>
+                        <option value="UoP_Nd" {% if data and data.employment_type == 'UoP_Nd' %}selected{% endif %}>UoP (nieokreślony)</option>
+                        <option value="B2B_12m" {% if data and data.employment_type == 'B2B_12m' %}selected{% endif %}>B2B (> 12m)</option>
+                        <option value="B2B_lt12m" {% if data and data.employment_type == 'B2B_lt12m' %}selected{% endif %}>B2B (< 12m)</option>
                     </select>
                 </div>
-
                 <div class="mb-3">
                     <label class="form-label">Dochód roczny (PLN)</label>
-                    <input type="number" name="annual_inc" class="form-control" value="{{ data.annual_inc if success else '' }}" required>
+                    <input type="number" step="any" name="annual_inc" class="form-control {% if missing_fields and 'annual_inc' in missing_fields %}is-invalid{% endif %}" value="{{ data.annual_inc if data else '' }}">
                 </div>
-
                 <div class="row">
                     <div class="col-6 mb-3">
                         <label class="form-label">DTI (%)</label>
-                        <input type="number" name="dti" class="form-control" value="{{ data.dti if success else '' }}" required>
+                        <input type="number" step="any" name="dti" class="form-control {% if missing_fields and 'dti' in missing_fields %}is-invalid{% endif %}" value="{{ data.dti if data else '' }}">
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label">FICO Score</label>
-                        <input type="number" name="fico" class="form-control" value="{{ data.fico if success else '' }}" required>
+                        <input type="number" step="any" name="fico" class="form-control {% if missing_fields and 'fico' in missing_fields %}is-invalid{% endif %}" value="{{ data.fico if data else '' }}">
                     </div>
                 </div>
-
                 <div class="mb-3">
                     <label class="form-label">Liczba osób na utrzymaniu</label>
-                    <input type="number" name="num_dependents" class="form-control" value="{{ data.num_dependents if success else '' }}">
+                    <input type="number" name="num_dependents" class="form-control" value="{{ data.num_dependents if data else '' }}">
                 </div>
-
-                <button type="submit" class="btn btn-evaluate">
-                    <i class="fa-solid fa-brain me-2">
-                </button>
+                <button type="submit" class="btn btn-evaluate"><i class="fa-solid fa-brain me-2"></i> Ocena Ryzyka</button>
             </form>
         </div>
 
-        <div class="col-md-9 main-content">
+        <div id="mainContentCol" class="col-9 main-content col-transition" style="overflow-y: auto; height: 100vh;">
             {% if success %}
                 <h3 class="mb-4 text-white">Raport oceny ryzyka</h3>
-
-                <ul class="nav nav-tabs" id="resultTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab"><i class="fa-solid fa-chart-line me-2"></i>Wynik i Decyzja</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="explain-tab" data-bs-toggle="tab" data-bs-target="#explain" type="button" role="tab"><i class="fa-solid fa-eye me-2"></i>Wyjaśnienie AI (SHAP)</button>
-                    </li>
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#summary" type="button"><i class="fa-solid fa-chart-line me-2"></i>Wynik i Decyzja</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#explain" type="button"><i class="fa-solid fa-eye me-2"></i>SHAP</button></li>
                 </ul>
 
-                <div class="tab-content" id="resultTabsContent">
-                    
-                    <div class="tab-pane fade show active" id="summary" role="tabpanel">
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="summary">
                         <div class="row">
                             <div class="col-12 mb-3">
                                 <div class="custom-card border-{{ 'danger alert-knf' if decision == 'NEGATYWNA' else 'success alert-ok' }}">
@@ -287,94 +313,82 @@
                                             <h4 class="m-0">Rekomendacja: <strong>{{ decision }}</strong></h4>
                                             {% if rejections %}
                                                 <ul class="mt-2 mb-0 text-danger" style="font-size:0.9rem;">
-                                                {% for rej in rejections %}
-                                                    <li>{{ rej }}</li>
-                                                {% endfor %}
+                                                {% for rej in rejections %}<li>{{ rej }}</li>{% endfor %}
                                                 </ul>
                                             {% else %}
-                                                <p class="text-success m-0 mt-1">Wniosek spełnia kryteria formalne i limity KNF.</p>
+                                                <p class="text-success m-0 mt-1">Wniosek spełnia kryteria formalne.</p>
                                             {% endif %}
                                         </div>
                                         <div class="col-4 text-end">
-                                            <div class="big-number">{{ prob }}<span class="unit">%</span></div>
-                                            <div class="stat-label">P(Fully Paid) - Hybrid</div>
+                                            <div class="big-number text-white">{{ prob }}%</div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="col-md-6 col-12 mb-3">
+                            <div class="col-xl-6 col-12 mb-3">
                                 <div class="custom-card">
                                     <div class="card-title-custom"><i class="fa-solid fa-sack-dollar"></i>Zdolność i Kwoty</div>
-                                    <div class="stat-row">
-                                        <span class="stat-label">Dochód miesięczny (netto)</span>
-                                        <span class="stat-value">{{ (data.annual_inc / 12) | int }} PLN</span>
-                                    </div>
-                                    <div class="stat-row">
-                                        <span class="stat-label">Szacowana rata (nowa)</span>
-                                        <span class="stat-value" style="color:var(--accent-orange); font-size:1.1rem;">{{ rata }} PLN</span>
-                                    </div>
-                                    <div class="stat-row">
-                                        <span class="stat-label">Показник DSTI (z nową ratą)</span>
-                                        <span class="stat-value">{{ dsti }}%</span>
-                                    </div>
-                                    <hr style="border-color:#444;">
-                                    <div class="stat-row">
-                                        <span class="stat-label">Dochód rozporządzalny (Left)</span>
-                                        <span class="stat-value {{ 'text-danger fw-bold' if left < (2000 + data.num_dependents * 1000) else 'text-success' }}">{{ left }} PLN</span>
-                                    </div>
+                                    <div class="stat-row"><span class="stat-label">Dochód miesięczny</span><span class="stat-value">{{ (data.annual_inc / 12) | int }} PLN</span></div>
+                                    <div class="stat-row"><span class="stat-label">Szacowana rata</span><span class="stat-value text-warning">{{ rata }} PLN</span></div>
+                                    <div class="stat-row"><span class="stat-label">Wskaźnik DSTI</span><span class="stat-value">{{ dsti }}%</span></div>
+                                    <hr style="border-color:#444;"><div class="stat-row"><span class="stat-label">Dochód rozporządzalny</span><span class="stat-value {{ 'text-danger' if left < 2000 else 'text-success' }}">{{ left }} PLN</span></div>
                                 </div>
                             </div>
-
-                            <div class="col-md-6 col-12 mb-3">
+                            <div class="col-xl-6 col-12 mb-3">
                                 <div class="custom-card">
-                                    <div class="card-title-custom"><i class="fa-solid fa-code-merge"></i>Korekta Ekspercka (Hybrid)</div>
-                                    <div class="stat-row">
-                                        <span class="stat-label">Bazowe P(Paid) z modelu AI</span>
-                                        <span class="stat-value">{{ base }}%</span>
-                                    </div>
-                                    <div class="stat-row">
-                                        <span class="stat-label">Korekta (Rodzaj zatrudnienia)</span>
-                                        <span class="stat-value {{ 'text-success' if adj > 0 else 'text-danger' }}">
-                                            {{ '+' if adj > 0 else '' }}{{ adj }}%
-                                        </span>
-                                    </div>
-                                    <hr style="border-color:#444;">
-                                    <div class="stat-row">
-                                        <span class="stat-label fw-bold" style="color:white">Finalne P(Paid)</span>
-                                        <span class="stat-value big-number" style="font-size:2rem; background:white; -webkit-text-fill-color:white;">{{ prob }}%</span>
-                                    </div>
+                                    <div class="card-title-custom"><i class="fa-solid fa-code-merge"></i>Korekta (Hybrid)</div>
+                                    <div class="stat-row"><span class="stat-label">Bazowe P(Paid) z AI</span><span class="stat-value">{{ base }}%</span></div>
+                                    <div class="stat-row"><span class="stat-label">Korekta ekspercka</span><span class="stat-value {{ 'text-success' if adj > 0 else 'text-danger' }}">{{ '+' if adj > 0 else '' }}{{ adj }}%</span></div>
+                                    <hr style="border-color:#444;"><div class="stat-row"><span class="stat-label fw-bold">Finalne P(Paid)</span><span class="stat-value big-number" style="font-size:2rem;">{{ prob }}%</span></div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="tab-pane fade" id="explain" role="tabpanel">
+                    <div class="tab-pane fade" id="explain">
                         <div class="custom-card">
-                            <div class="card-title-custom"><i class="fa-solid fa-magnifying-glass-chart"></i>Interpretacja lokalna (SHAP Force Plot)</div>
-                            <p class="text-muted" style="font-size:0.9rem">
-                                Grafika pokazuje wpływ poszczególnych zmiennych на odchylenie prognozy від średniej.
-                                <span style="color:#ff0051 fw-bold">Czerwone bars</span> підвищують ризик дефолту,
-                                <span style="color:#008bfb fw-bold">Niebieskie bars</span> підвищують шанс виплати.
-                            </p>
-                            <div class="shap-container text-center">
-                                <img src="{{ url_for('static', filename='current_shap.png') }}?t={{ time_stamp }}" alt="SHAP Plot" class="img-fluid">
-                            </div>
+                            <div class="card-title-custom"><i class="fa-solid fa-magnifying-glass-chart"></i>SHAP Force Plot</div>
+                            <div class="shap-container text-center"><img src="{{ url_for('static', filename='current_shap.png') }}?t={{ time_stamp }}" class="img-fluid"></div>
                         </div>
                     </div>
                 </div>
-
             {% else %}
                 <div class="text-center text-muted pt-5">
                     <i class="fa-solid fa-arrow-left fa-3x mb-3"></i>
                     <h4>Wypełnij formularz po lewej stronie</h4>
-                    <p>Aby zobaczyć analizę ryzyka i decyzję kredytową.</p>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function toggleHelpPanel() {
+        const mainCol = document.getElementById('mainContentCol');
+        const helpCol = document.getElementById('helpContentCol');
+
+        if (helpCol.classList.contains('col-0')) {
+            // Відкриваємо панель підказок зліва
+            helpCol.classList.remove('col-0');
+            helpCol.classList.add('col-3');
+            helpCol.style.maxWidth = '100%';
+            helpCol.style.opacity = '1';
+            
+            // Стискаємо головний контент справа
+            mainCol.classList.remove('col-9');
+            mainCol.classList.add('col-6');
+        } else {
+            // Ховаємо панель підказок
+            helpCol.classList.remove('col-3');
+            helpCol.classList.add('col-0');
+            helpCol.style.maxWidth = '0';
+            helpCol.style.opacity = '0';
+            
+            // Розширюємо головний контент назад
+            mainCol.classList.remove('col-6');
+            mainCol.classList.add('col-9');
+        }
+    }
+</script>
 </body>
 </html>
