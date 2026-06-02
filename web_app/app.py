@@ -11,14 +11,18 @@ matplotlib.use('Agg')
 
 app = Flask(__name__)
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # static folder
-if not os.path.exists('static'):
-    os.makedirs('static')
+static_dir = os.path.join(BASE_DIR, 'static')
+if not os.path.exists(static_dir):
+    os.makedirs(static_dir)
 
 # ✅ LOAD MODEL (fixed)
 model = None
 try:
-    model = joblib.load('credit_model.pkl')
+    model_path = os.path.join(BASE_DIR, '..', 'models', 'credit_model.pkl')
+    model = joblib.load(model_path)
 except Exception as e:
     print(f"Помилка завантаження моделі: {e}")
 
@@ -132,7 +136,7 @@ def index():
         final_decision = "NEGATYWNA" if rejections else "POZYTYWNA"
 
         # --- SHAP ---
-        shap_img_path = 'static/current_shap.png'
+        shap_img_path = os.path.join(BASE_DIR, 'static', 'current_shap.png')
         if model and hasattr(model, 'estimators_'):
             try:
                 plt.clf()

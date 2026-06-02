@@ -1,50 +1,43 @@
-System Oceny Ryzyka Kredytowego (XAI & Hybrid AI)
+# System Oceny Ryzyka Kredytowego (XAI & Hybrid AI)
+
 Repozytorium zawiera inżynierski projekt systemu scoringowego, który łączy uczenie maszynowe (Random Forest) z rygorystycznymi zasadami polskiego nadzoru finansowego (KNF).
 
-🚀 Jak uruchomić projekt?
-1.Instalacja bibliotek:
+## 🚀 Jak uruchomić projekt?
+
+### 1. Instalacja bibliotek:
 Upewnij się, że masz zainstalowanego Pythona (zalecany 3.10+). W terminalu wpisz:
+```bash
 pip install -r requirements.txt
+```
 
-2.Uruchomienie aplikacji:
-Wpisz poniższą komendę, aby otworzyć interaktywny interfejs w przeglądarce:
-streamlit run app.py
+### 2. Uruchomienie aplikacji:
+Wpisz poniższą komendę w głównym folderze projektu, aby uruchomić serwer Flask:
+```bash
+python run_app.py
+```
+Po uruchomieniu, otwórz w przeglądarce adres: [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
 
-3.Trening modelu (opcjonalnie):
-Jeśli chcesz odświeżyć model, uruchom plik model_training.ipynb w środowisku Jupyter.
+### 3. Analiza i trening modelu (opcjonalnie):
+Notebooki znajdują się w folderze `notebooks/`. Jeśli chcesz odświeżyć analizę EDA lub przetrenować model, uruchom odpowiednie pliki `.ipynb` w środowisku Jupyter:
+- `notebooks/analiza_danych.ipynb` (analiza EDA i czyszczenie danych)
+- `notebooks/model_training.ipynb` (proces trenowania klasyfikatora Random Forest)
 
-📂 Struktura plików
--- app.py --
-- Główny punkt wejścia aplikacji (Dashboard Streamlit).
-- Implementacja modułu Legal Gatekeeper (weryfikacja statusu pobytu obcokrajowców).
-- Logika Compliance KNF (automatyczne sprawdzanie limitów DSTI i minimum socjalnego).
-- Silnik Hybrid AI, łączący matematyczny wynik modelu ML z korektami eksperckimi (typ umowy, Graph Risk).
-- Moduł XAI (Explainable AI) generujący wykresy SHAP, które tłumaczą powody podjęcia konkretnej decyzji.
+---
 
--- model_training.ipynb --
-- Skrypt odpowiedzialny za budowę modelu predykcyjnego.
-- Przetwarzanie danych (One-Hot Encoding, usuwanie brakujących wartości).
-- Trening klasyfikatora Random Forest z balansem klas (class_weight='balanced').
-- Eksport gotowego modelu do pliku binarnego.
+## 📂 Struktura katalogów i plików
 
--- analiza_danych.ipynb --
-- Proces EDA (Exploratory Data Analysis) na zbiorze 200,000 rekordów.
-- Identyfikacja i usunięcie zjawiska Data Leakage (zmienne typu hardship i settlement).
-- Analiza korelacji między dochodem, wynikiem BIK a spłacalnością kredytu.
-
--- credit_model.pkl --
-- Zapisany stan wytrenowanego modelu.
-- Przechowuje wagi i strukturę lasu losowego, gotową do natychmiastowego użycia w aplikacji.
-
--- explaint.txt --
-- Dokumentacja techniczna i log zmian (Changelog).
-- Szczegółowy opis wszystkich 115 cech zbioru danych (LendingClub).
-- Historia wersji projektu (od v1.0.0 do v3.0.0).
-
--- inj_rozdział_1.docx --
-- Pierwszy rozdział pracy dyplomowej ("Teoretyczne aspekty AI w bankowości").
-- Opis problematyki "czarnej skrzynki" (Black Box) i metodologii XAI.
-
--- .gitignore --
-- Plik konfiguracyjny dla systemu Git.
-- Blokuje wysyłanie na serwer niepotrzebnych plików tymczasowych (__pycache__) oraz ciężkich wirtualnych środowisk (venv).
+- **`notebooks/`**
+  - `analiza_danych.ipynb` — proces EDA (Exploratory Data Analysis) na zbiorze 200,000 rekordów. Zawiera eliminację Data Leakage i analizę korelacji.
+  - `model_training.ipynb` — trening zbalansowanego modelu Random Forest z zapisem wag i kolumn.
+- **`models/`**
+  - `credit_model.pkl` — plik binarny wytrenowanego klasyfikatora Random Forest (wykluczony z repozytorium z uwagi na rozmiar).
+  - `model_columns.pkl` — lista zmapowanych kolumn (One-Hot Encoding) wykorzystywana przy walidacji wejść w web app.
+- **`web_app/`**
+  - `app.py` — silnik aplikacji w Flasku łączący Legal Gatekeeper, reguły KNF (DSTI), wagi eksperckie i interpretowalność SHAP.
+  - `templates/index.html` — interaktywny, nowoczesny szablon UI w ciemnym motywie (Dark Mode) z panelem objaśnień.
+  - `static/current_shap.png` — wygenerowany wykres wyjaśniający (SHAP Force Plot) dla ostatniej predykcji.
+- **`data/`**
+  - `accepted_2007_to_2018Q4.csv` — wejściowy zbiór danych LendingClub (1.6 GB, wykluczony z repozytorium).
+- **`run_app.py`** — skrypt ułatwiający uruchomienie aplikacji directly z głównego folderu.
+- **`requirements.txt`** — lista bibliotek zależnych.
+- **`patch_notes.txt`** — historia wydań projektu (changelog).

@@ -6,7 +6,13 @@ __pycache__/
 *.csv
 *.xlsx
 data/
-*.venv/
+recomented_file.py
+.venv/
+
+
+# Ігнорувати великі бінарні моделі, але зберігати опис колонок
+models/*.pkl
+!models/model_columns.pkl
 *.pkl
 
 # Ігнорувати файли VS Code
