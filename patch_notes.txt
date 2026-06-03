@@ -87,3 +87,23 @@ Stabilizacja UI i XAI:
 - model_training.ipynb - Model zbalansowany, przygotowany pod hybrydowy system decyzyjny.
 - app.py - Kompletny system klasy bankowej (Compliance + AI + XAI).
 - credit_model.pkl - Wytrenowany klasyfikator ryzyka (6 cech bazowych).
+
+03/06/2026
+HISTORIA ZMIAN I DOKUMENTACJA PROJEKTU Wersja: 4.0.0
+
+--- LOG ZMIAN ---
+
+v4.0.0 (Restrukturyzacja Architektury i Refaktoryzacja Aplikacji Webowej):
+- Wprowadzenie nowej, czystej struktury katalogów w celu separacji logiki projektu: `web_app/` dla aplikacji, `notebooks/` dla analizy i uczenia maszynowego oraz `models/` dla plików modeli.
+- Migracja interfejsu aplikacji webowej (Flask): przeniesienie głównego punktu wejścia `app.py` oraz katalogów `templates/` i `static/` do dedykowanego folderu `web_app/`.
+- Zastąpienie bezwzględnych ścieżek dostępu (absolute paths) ścieżkami względnymi (relative paths) w plikach `analiza_danych.ipynb` oraz `model_training.ipynb`, co zapewnia pełną przenośność projektu między środowiskami.
+- Dodanie skryptu startowego `run_app.py` w głównym katalogu, który umożliwia dynamiczne uruchomienie aplikacji Flask z poziomu root.
+- Utworzenie pliku `requirements.txt` w katalogu głównym, zawierającego wszystkie niezbędne zależności systemowe (m.in. flask, pandas, shap, matplotlib, joblib, scikit-learn).
+- Aktualizacja reguł `.gitignore` w celu poprawnego ignorowania dużych plików modeli przy jednoczesnym śledzeniu metadanych (`model_columns.pkl`).
+- Aktualizacja dokumentacji `README.md` o nowe instrukcje uruchamiania aplikacji.
+
+--- KLUCZOWE PLIKI (Aktualizacja) ---
+- run_app.py - Nowy, główny punkt wejścia do uruchamiania aplikacji webowej.
+- web_app/app.py - Zaktualizowana logika aplikacji zintegrowana z modelami ładowanymi z folderu `models/`.
+- notebooks/model_training.ipynb - Zaktualizowany notatnik z wdrożonymi ścieżkami względnymi do eksportu plików `.pkl`.
+- requirements.txt - Nowy plik konfiguracyjny ze spisem bibliotek niezbędnych do działania systemu.
