@@ -1,43 +1,44 @@
-# System Oceny Ryzyka Kredytowego (XAI & Hybrid AI)
+# Credit Risk Assessment System (XAI & Hybrid AI)
 
-Repozytorium zawiera inżynierski projekt systemu scoringowego, który łączy uczenie maszynowe (Random Forest) z rygorystycznymi zasadami polskiego nadzoru finansowego (KNF).
+The repository contains an engineering project of a scoring system that combines machine learning (Random Forest) with strict rules of the Polish Financial Supervision Authority (KNF).
 
-## 🚀 Jak uruchomić projekt?
+## 🚀 How to run the project?
 
-### 1. Instalacja bibliotek:
-Upewnij się, że masz zainstalowanego Pythona (zalecany 3.10+). W terminalu wpisz:
+### 1. Install dependencies:
+Ensure you have Python installed (recommended 3.10+). In the terminal, type:
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Uruchomienie aplikacji:
-Wpisz poniższą komendę w głównym folderze projektu, aby uruchomić serwer Flask:
+### 2. Run the application:
+Type the following command in the main project folder to start the Flask server:
 ```bash
 python run_app.py
 ```
-Po uruchomieniu, otwórz w przeglądarce adres: [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
+After starting, open the browser at: [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
 
-### 3. Analiza i trening modelu (opcjonalnie):
-Notebooki znajdują się w folderze `notebooks/`. Jeśli chcesz odświeżyć analizę EDA lub przetrenować model, uruchom odpowiednie pliki `.ipynb` w środowisku Jupyter:
-- `notebooks/analiza_danych.ipynb` (analiza EDA i czyszczenie danych)
-- `notebooks/model_training.ipynb` (proces trenowania klasyfikatora Random Forest)
+### 3. Model analysis and training (optional):
+Notebooks are located in the `notebooks/` folder. If you want to refresh the EDA analysis or retrain the model, run the appropriate `.ipynb` files in the Jupyter environment:
+- `notebooks/analiza_danych.ipynb` (EDA analysis and data cleaning)
+- `notebooks/model_training.ipynb` (Random Forest classifier training process)
 
 ---
 
-## 📂 Struktura katalogów i plików
+## 📂 Directory and file structure
 
 - **`notebooks/`**
-  - `analiza_danych.ipynb` — proces EDA (Exploratory Data Analysis) na zbiorze 200,000 rekordów. Zawiera eliminację Data Leakage i analizę korelacji.
-  - `model_training.ipynb` — trening zbalansowanego modelu Random Forest z zapisem wag i kolumn.
+  - `analiza_danych.ipynb` — EDA (Exploratory Data Analysis) process on a dataset of 200,000 records. Contains Data Leakage elimination and correlation analysis.
+  - `model_training.ipynb` — training of a balanced Random Forest model saving weights and columns.
 - **`models/`**
-  - `credit_model.pkl` — plik binarny wytrenowanego klasyfikatora Random Forest (wykluczony z repozytorium z uwagi na rozmiar).
-  - `model_columns.pkl` — lista zmapowanych kolumn (One-Hot Encoding) wykorzystywana przy walidacji wejść w web app.
+  - `credit_model.pkl` — binary file of the trained Random Forest classifier (excluded from repository due to size).
+  - `model_columns.pkl` — list of mapped columns (One-Hot Encoding) used for input validation in the web app.
 - **`web_app/`**
-  - `app.py` — silnik aplikacji w Flasku łączący Legal Gatekeeper, reguły KNF (DSTI), wagi eksperckie i interpretowalność SHAP.
-  - `templates/index.html` — interaktywny, nowoczesny szablon UI w ciemnym motywie (Dark Mode) z panelem objaśnień.
-  - `static/current_shap.png` — wygenerowany wykres wyjaśniający (SHAP Force Plot) dla ostatniej predykcji.
+  - `app.py` — Flask application engine combining Legal Gatekeeper, KNF rules (DSTI), expert weights, and SHAP interpretability.
+  - `templates/index.html` — interactive, modern UI template in Dark Mode with an explanation panel.
+  - `static/current_shap.png` — generated explanation chart (SHAP Force Plot) for the last prediction.
 - **`data/`**
-  - `accepted_2007_to_2018Q4.csv` — wejściowy zbiór danych LendingClub (1.6 GB, wykluczony z repozytorium).
-- **`run_app.py`** — skrypt ułatwiający uruchomienie aplikacji directly z głównego folderu.
-- **`requirements.txt`** — lista bibliotek zależnych.
-- **`patch_notes.txt`** — historia wydań projektu (changelog).
+  - `accepted_2007_to_2018Q4.csv` — input LendingClub dataset (1.6 GB, excluded from repository).
+- **`run_app.py`** — script to easily run the application directly from the root folder.
+- **`requirements.txt`** — list of dependent libraries.
+- **`patch_notes.txt`** — project release history (changelog).
+

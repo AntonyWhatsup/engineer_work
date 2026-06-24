@@ -4,6 +4,7 @@ import pandas as pd
 import shap
 import matplotlib
 import matplotlib.pyplot as plt
+# pyrefly: ignore [missing-import]
 from flask import Flask, render_template, request
 import joblib
 
@@ -24,7 +25,7 @@ try:
     model_path = os.path.join(BASE_DIR, '..', 'models', 'credit_model.pkl')
     model = joblib.load(model_path)
 except Exception as e:
-    print(f"Помилка завантаження моделі: {e}")
+    print(f"Model loading error: {e}")
 
 # --- CONSTANTS ---
 RATA_FACTOR = 0.02
@@ -39,7 +40,7 @@ MIN_CASH_DEPENDENT = 1000
 def index():
     if request.method == 'POST':
 
-        # --- 1. ВАЛІДАЦІЯ ФОРМИ ---
+        # --- 1. FORM VALIDATION ---
         required_fields = ['loan_amnt', 'annual_inc', 'dti', 'fico']
         missing_fields = []
 
@@ -48,16 +49,16 @@ def index():
             if not val:
                 missing_fields.append(field)
 
-        # Якщо є порожні обов'язкові поля - повертаємо форму з помилками
+        # If there are empty required fields - return the form with errors
         if missing_fields:
             return render_template(
                 'index.html', 
                 success=False, 
                 missing_fields=missing_fields, 
-                data=request.form  # Зберігаємо те, що користувач вже ввів
+                data=request.form  # Save what the user has already entered
             )
 
-        # --- INPUT (безпечне зчитування після валідації) ---
+        # --- INPUT (safe reading after validation) ---
         data_inputs = {
             'loan_amnt': float(request.form.get('loan_amnt')),
             'term': request.form.get('term', '36m'),
@@ -87,10 +88,10 @@ def index():
             'loan_to_income': loan_to_income
         }])
 
-        # --- 2. ВИРІВНЮВАННЯ КОЛОНОК ДЛЯ МОДЕЛІ ---
+        # --- 2. ALIGNING COLUMNS FOR THE MODEL ---
         if model and hasattr(model, 'feature_names_in_'):
             expected_cols = model.feature_names_in_
-            # Додаємо відсутні колонки (заповнюємо 0) і ставимо їх у правильному порядку
+            # Add missing columns (fill with 0) and put them in the correct order
             input_df = input_df.reindex(columns=expected_cols, fill_value=0)
 
         # --- MODEL ---
@@ -99,7 +100,7 @@ def index():
             try:
                 base_prob = model.predict_proba(input_df)[0][1]
             except Exception as e:
-                print(f"Помилка predict: {e}")
+                print(f"Predict error: {e}")
 
         # --- HYBRID ---
         adj = 0
@@ -123,17 +124,17 @@ def index():
         rejections = []
 
         if data_inputs['citizenship'] == 'UA' and data_inputs['residency'] in ['Brak', 'Krotki']:
-            rejections.append("Odmowa: Status rezydencji.")
+            rejections.append("Rejection: Residency status.")
 
         limit = DSTI_LIMIT_HIGH if monthly_inc > DSTI_INCOME_THRESHOLD else DSTI_LIMIT_LOW
         if (dsti / 100) > limit:
-            rejections.append("Odmowa: DSTI limit.")
+            rejections.append("Rejection: DSTI limit.")
 
         required_cash = MIN_CASH_APPLICANT + (data_inputs['num_dependents'] * MIN_CASH_DEPENDENT)
         if cash_left < required_cash:
-            rejections.append("Odmowa: Za mały dochód.")
+            rejections.append("Rejection: Income too low.")
 
-        final_decision = "NEGATYWNA" if rejections else "POZYTYWNA"
+        final_decision = "NEGATIVE" if rejections else "POSITIVE"
 
         # --- SHAP ---
         shap_img_path = os.path.join(BASE_DIR, 'static', 'current_shap.png')
@@ -146,7 +147,7 @@ def index():
                 if isinstance(shap_values, list):
                     sv = shap_values[1][0]
                     ev = explainer.expected_value[1]
-                elif len(shap_values.shape) == 3:  # Новий SHAP (1, 6, 2)
+                elif len(shap_values.shape) == 3:  # New SHAP (1, 6, 2)
                     sv = shap_values[0, :, 1]
                     ev = explainer.expected_value[1]
                 else:
@@ -156,7 +157,7 @@ def index():
                 shap.force_plot(
                     ev,
                     sv,
-                    input_df.iloc[0], # Беремо перший рядок (єдиний)
+                    input_df.iloc[0], # Take the first row (the only one)
                     matplotlib=True,
                     show=False
                 )

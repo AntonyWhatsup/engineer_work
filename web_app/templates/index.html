@@ -200,30 +200,30 @@
                     <button type="button" class="btn-close btn-close-white" onclick="toggleHelpPanel()"></button>
                 </div>
 
-                <p class="text-muted" style="font-size: 0.85rem;">Wyjaśnienie logiki Hybrydowej (AI + KNF):</p>
+                <p class="text-muted" style="font-size: 0.85rem;">Explanation of Hybrid logic (AI + KNF):</p>
                 <div class="help-item">
                     <div class="help-title">Gwarantowana kwota & Okres</div>
-                    <div class="help-desc">Kwota kredytu oraz czas spłaty. Na ich podstawie kalkulowana jest nowa rata.</div>
+                    <div class="help-desc">Loan amount and repayment time. Based on them, a new installment is calculated.</div>
                 </div>
                 <div class="help-item">
                     <div class="help-title">Obywatelstwo & Pobyt</div>
-                    <div class="help-desc">Zasada (Hard Rule): Brak stałego pobytu u obcokrajowców często generuje automatyczną odmowę.</div>
+                    <div class="help-desc">Rule (Hard Rule): Lack of permanent residence among foreigners often generates automatic refusal.</div>
                 </div>
                 <div class="help-item">
                     <div class="help-title">Rodzaj zatrudnienia</div>
-                    <div class="help-desc">Korekta do wyniku AI: UoP (+10%), B2B krótki (-25%).</div>
+                    <div class="help-desc">Correction to AI result: UoP (+10%), B2B short (-25%).</div>
                 </div>
                 <div class="help-item">
                     <div class="help-title">DTI (Debt-to-Income)</div>
-                    <div class="help-desc">Limit max 50-65%. Jeśli nowa rata go przekroczy, odrzucamy z automatu.</div>
+                    <div class="help-desc">Limit max 50-65%. If the new installment exceeds it, we reject it automatically.</div>
                 </div>
                 <div class="help-item">
                     <div class="help-title">FICO Score</div>
-                    <div class="help-desc">300 (zła historia) do 850 (idealna). To główny silnik predykcji modelu AI.</div>
+                    <div class="help-desc">300 (bad story) to 850 (perfect). This is the main prediction engine of the AI ​​model.</div>
                 </div>
                 <div class="help-item">
                     <div class="help-title">Osoby na utrzymaniu</div>
-                    <div class="help-desc">Każda osoba zwiększa "minimum socjalne". Brak wystarczającego dochodu po opłaceniu rat (Dochód rozporządzalny) = Odmowa.</div>
+                    <div class="help-desc">Each person increases the "social minimum". Lack of sufficient income after paying installments (Disposable Income) = Denial.</div>
                 </div>
             </div>
         </div>
@@ -233,8 +233,7 @@
             <div class="brand-subtitle">
                 Predict, Adjust, Explain (v3.0)
                 <button class="btn btn-sm btn-outline-secondary mt-3 w-100 text-start" type="button" onclick="toggleHelpPanel()" style="border-color: #444;">
-                    <i class="fa-solid fa-table-columns" style="color: var(--accent-orange);"></i> Pokaż / Ukryj przewodnik
-                </button>
+                    <i class="fa-solid fa-table-columns" style="color: var(--accent-orange);"></i>Show/Hide guide                </button>
             </div>
             
             <form action="/" method="post" novalidate>
@@ -245,8 +244,8 @@
                 <div class="mb-3">
                     <label class="form-label">Okres kredytowania</label>
                     <select name="term" class="form-select">
-                        <option value="36m" {% if data and data.term == '36m' %}selected{% endif %}>36 miesięcy</option>
-                        <option value="60m" {% if data and data.term == '60m' %}selected{% endif %}>60 miesięcy</option>
+                        <option value="36m" {% if data and data.term == '36m' %}selected{% endif %}>36 months</option>
+                        <option value="60m" {% if data and data.term == '60m' %}selected{% endif %}>60 months</option>
                     </select>
                 </div>
                 <div class="row">
@@ -260,7 +259,7 @@
                     <div class="col-6 mb-3">
                         <label class="form-label">Karta pobytu</label>
                         <select name="residency" class="form-select">
-                            <option value="Staly" {% if data and data.residency == 'Staly' %}selected{% endif %}>Stały</option>
+                            <option value="Staly" {% if data and data.residency == 'Staly' %}selected{% endif %}>Constant</option>
                             <option value="Brak" {% if data and data.residency == 'Brak' %}selected{% endif %}>Brak</option>
                         </select>
                     </div>
@@ -268,13 +267,13 @@
                 <div class="mb-3">
                     <label class="form-label">Rodzaj zatrudnienia</label>
                     <select name="employment_type" class="form-select">
-                        <option value="UoP_Nd" {% if data and data.employment_type == 'UoP_Nd' %}selected{% endif %}>UoP (nieokreślony)</option>
+                        <option value="UoP_Nd" {% if data and data.employment_type == 'UoP_Nd' %}selected{% endif %}>UoP (undefined)</option>
                         <option value="B2B_12m" {% if data and data.employment_type == 'B2B_12m' %}selected{% endif %}>B2B (> 12m)</option>
                         <option value="B2B_lt12m" {% if data and data.employment_type == 'B2B_lt12m' %}selected{% endif %}>B2B (< 12m)</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Dochód roczny (PLN)</label>
+                    <label class="form-label">Annual income (PLN)</label>
                     <input type="number" step="any" name="annual_inc" class="form-control {% if missing_fields and 'annual_inc' in missing_fields %}is-invalid{% endif %}" value="{{ data.annual_inc if data else '' }}">
                 </div>
                 <div class="row">
@@ -288,7 +287,7 @@
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Liczba osób na utrzymaniu</label>
+                    <label class="form-label">Number of dependents</label>
                     <input type="number" name="num_dependents" class="form-control" value="{{ data.num_dependents if data else '' }}">
                 </div>
                 <button type="submit" class="btn btn-evaluate"><i class="fa-solid fa-brain me-2"></i> Ocena Ryzyka</button>
@@ -316,7 +315,7 @@
                                                 {% for rej in rejections %}<li>{{ rej }}</li>{% endfor %}
                                                 </ul>
                                             {% else %}
-                                                <p class="text-success m-0 mt-1">Wniosek spełnia kryteria formalne.</p>
+                                                <p class="text-success m-0 mt-1">The application meets the formal criteria.</p>
                                             {% endif %}
                                         </div>
                                         <div class="col-4 text-end">
@@ -327,11 +326,11 @@
                             </div>
                             <div class="col-xl-6 col-12 mb-3">
                                 <div class="custom-card">
-                                    <div class="card-title-custom"><i class="fa-solid fa-sack-dollar"></i>Zdolność i Kwoty</div>
-                                    <div class="stat-row"><span class="stat-label">Dochód miesięczny</span><span class="stat-value">{{ (data.annual_inc / 12) | int }} PLN</span></div>
+                                    <div class="card-title-custom"><i class="fa-solid fa-sack-dollar"></i>Capacity and Quotas</div>
+                                    <div class="stat-row"><span class="stat-label">Monthly income</span><span class="stat-value">{{ (data.annual_inc / 12) | int }} PLN</span></div>
                                     <div class="stat-row"><span class="stat-label">Szacowana rata</span><span class="stat-value text-warning">{{ rata }} PLN</span></div>
-                                    <div class="stat-row"><span class="stat-label">Wskaźnik DSTI</span><span class="stat-value">{{ dsti }}%</span></div>
-                                    <hr style="border-color:#444;"><div class="stat-row"><span class="stat-label">Dochód rozporządzalny</span><span class="stat-value {{ 'text-danger' if left < 2000 else 'text-success' }}">{{ left }} PLN</span></div>
+                                    <div class="stat-row"><span class="stat-label">DSTI indicator</span><span class="stat-value">{{ dsti }}%</span></div>
+                                    <hr style="border-color:#444;"><div class="stat-row"><span class="stat-label">Disposable income</span><span class="stat-value {{ 'text-danger' if left < 2000 else 'text-success' }}">{{ left }} PLN</span></div>
                                 </div>
                             </div>
                             <div class="col-xl-6 col-12 mb-3">
@@ -354,7 +353,7 @@
             {% else %}
                 <div class="text-center text-muted pt-5">
                     <i class="fa-solid fa-arrow-left fa-3x mb-3"></i>
-                    <h4>Wypełnij formularz po lewej stronie</h4>
+                    <h4>Complete the form on the left</h4>
                 </div>
             {% endif %}
         </div>
@@ -368,24 +367,20 @@
         const helpCol = document.getElementById('helpContentCol');
 
         if (helpCol.classList.contains('col-0')) {
-            // Відкриваємо панель підказок зліва
-            helpCol.classList.remove('col-0');
+// Open the tooltip panel on the left            helpCol.classList.remove('col-0');
             helpCol.classList.add('col-3');
             helpCol.style.maxWidth = '100%';
             helpCol.style.opacity = '1';
             
-            // Стискаємо головний контент справа
-            mainCol.classList.remove('col-9');
+// Compress the main content on the right            mainCol.classList.remove('col-9');
             mainCol.classList.add('col-6');
         } else {
-            // Ховаємо панель підказок
-            helpCol.classList.remove('col-3');
+// Hide the tooltip            helpCol.classList.remove('col-3');
             helpCol.classList.add('col-0');
             helpCol.style.maxWidth = '0';
             helpCol.style.opacity = '0';
             
-            // Розширюємо головний контент назад
-            mainCol.classList.remove('col-6');
+// Expand the main content back            mainCol.classList.remove('col-6');
             mainCol.classList.add('col-9');
         }
     }

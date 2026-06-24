@@ -1,8 +1,8 @@
-# Ігнорувати віртуальне середовище (це гігабайти сміття)
+
 venv/
 __pycache__/
 
-# Ігнорувати дані (ліміт GitHub 100MB)
+
 *.csv
 *.xlsx
 data/
@@ -10,10 +10,10 @@ recomented_file.py
 .venv/
 
 
-# Ігнорувати великі бінарні моделі, але зберігати опис колонок
+
 models/*.pkl
 !models/model_columns.pkl
 *.pkl
 
-# Ігнорувати файли VS Code
+
 .vscode/
