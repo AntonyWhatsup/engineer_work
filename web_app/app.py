@@ -1,189 +1,83 @@
+from __future__ import annotations
+
 import os
-import time
-import pandas as pd
-import shap
-import matplotlib
-import matplotlib.pyplot as plt
-# pyrefly: ignore [missing-import]
-from flask import Flask, render_template, request
-import joblib
+from pathlib import Path
 
-matplotlib.use('Agg')
+from flask import Flask, jsonify, render_template, request
 
-app = Flask(__name__)
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# static folder
-static_dir = os.path.join(BASE_DIR, 'static')
-if not os.path.exists(static_dir):
-    os.makedirs(static_dir)
-
-# ✅ LOAD MODEL (fixed)
-model = None
-try:
-    model_path = os.path.join(BASE_DIR, '..', 'models', 'credit_model.pkl')
-    model = joblib.load(model_path)
-except Exception as e:
-    print(f"Model loading error: {e}")
-
-# --- CONSTANTS ---
-RATA_FACTOR = 0.02
-DSTI_LIMIT_HIGH = 0.65
-DSTI_LIMIT_LOW = 0.50
-DSTI_INCOME_THRESHOLD = 7500
-MIN_CASH_APPLICANT = 2000
-MIN_CASH_DEPENDENT = 1000
+from src.config import DEFAULT_MODEL_PATH
+from src.explainability.shap_explainer import explain_default_prediction
+from src.inference.service import CreditRiskService
+from src.validation.schema import validate_application
 
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if request.method == 'POST':
+def _form_payload(form) -> dict:
+    return {
+        "loan_amnt": form.get("loan_amnt"),
+        "term": form.get("term"),
+        "annual_inc": form.get("annual_inc"),
+        "dti": form.get("dti"),
+        "fico_range_low": form.get("fico_range_low"),
+        "emp_length": form.get("emp_length"),
+        "home_ownership": form.get("home_ownership"),
+        "purpose": form.get("purpose"),
+        "verification_status": form.get("verification_status"),
+        "employment_type": form.get("employment_type"),
+        "apr": form.get("apr"),
+        "num_dependents": form.get("num_dependents"),
+        "residency_covers_term": form.get("residency_covers_term"),
+    }
 
-        # --- 1. FORM VALIDATION ---
-        required_fields = ['loan_amnt', 'annual_inc', 'dti', 'fico']
-        missing_fields = []
 
-        for field in required_fields:
-            val = request.form.get(field, '').strip()
-            if not val:
-                missing_fields.append(field)
+def create_app(artifact_path: str | Path | None = None, testing: bool = False) -> Flask:
+    app = Flask(__name__)
+    model_path = Path(artifact_path or os.environ.get("MODEL_ARTIFACT_PATH", DEFAULT_MODEL_PATH))
+    service = CreditRiskService(model_path)
+    app.config["credit_risk_service"] = service
+    app.config["TESTING"] = testing
 
-        # If there are empty required fields - return the form with errors
-        if missing_fields:
-            return render_template(
-                'index.html', 
-                success=False, 
-                missing_fields=missing_fields, 
-                data=request.form  # Save what the user has already entered
-            )
-
-        # --- INPUT (safe reading after validation) ---
-        data_inputs = {
-            'loan_amnt': float(request.form.get('loan_amnt')),
-            'term': request.form.get('term', '36m'),
-            'citizenship': request.form.get('citizenship', 'UA'),
-            'residency': request.form.get('residency', 'Brak'),
-            'employment_type': request.form.get('employment_type', 'UoP_Nd'),
-            'annual_inc': float(request.form.get('annual_inc')),
-            'dti': float(request.form.get('dti')),
-            'fico': float(request.form.get('fico')),
-            'num_dependents': int(request.form.get('num_dependents', 0) or 0)
-        }
-
-        # --- FEATURES ---
-        term_num = 36 if '36' in data_inputs['term'] else 60
-
-        loan_to_income = (
-            data_inputs['loan_amnt'] / data_inputs['annual_inc']
-            if data_inputs['annual_inc'] > 0 else 0
+    @app.get("/health")
+    def health():
+        return jsonify(
+            {
+                "status": "ready",
+                "artifact_version": service.artifact.metadata["artifact_version"],
+                "target": "P(Default)",
+            }
         )
 
-        input_df = pd.DataFrame([{
-            'annual_inc': data_inputs['annual_inc'],
-            'loan_amnt': data_inputs['loan_amnt'],
-            'term': term_num,
-            'fico_range_low': data_inputs['fico'],
-            'dti': data_inputs['dti'],
-            'loan_to_income': loan_to_income
-        }])
+    @app.route("/", methods=["GET", "POST"])
+    def index():
+        if request.method == "GET":
+            return render_template("index.html", success=False, data={})
 
-        # --- 2. ALIGNING COLUMNS FOR THE MODEL ---
-        if model and hasattr(model, 'feature_names_in_'):
-            expected_cols = model.feature_names_in_
-            # Add missing columns (fill with 0) and put them in the correct order
-            input_df = input_df.reindex(columns=expected_cols, fill_value=0)
+        raw_payload = _form_payload(request.form)
+        application, errors = validate_application(raw_payload)
+        if errors or application is None:
+            return render_template("index.html", success=False, data=raw_payload, errors=errors), 400
 
-        # --- MODEL ---
-        base_prob = 0.85
-        if model:
-            try:
-                base_prob = model.predict_proba(input_df)[0][1]
-            except Exception as e:
-                print(f"Predict error: {e}")
-
-        # --- HYBRID ---
-        adj = 0
-        emp = data_inputs['employment_type']
-        if emp == 'UoP_Nd': adj = 0.10
-        elif emp == 'UoP_Cz': adj = -0.05
-        elif emp == 'UZ_UdP': adj = -0.15
-        elif emp == 'B2B_12m': adj = 0.05
-        elif emp == 'B2B_lt12m': adj = -0.25
-
-        final_prob = max(0.01, min(0.99, base_prob + adj))
-
-        # --- CALCULATIONS ---
-        monthly_inc = data_inputs['annual_inc'] / 12
-        rata = data_inputs['loan_amnt'] * RATA_FACTOR
-        total_debt_service = rata + (data_inputs['dti'] / 100 * monthly_inc)
-        dsti = (total_debt_service / monthly_inc * 100) if monthly_inc > 0 else 100
-        cash_left = monthly_inc - total_debt_service
-
-        # --- RULES ---
-        rejections = []
-
-        if data_inputs['citizenship'] == 'UA' and data_inputs['residency'] in ['Brak', 'Krotki']:
-            rejections.append("Rejection: Residency status.")
-
-        limit = DSTI_LIMIT_HIGH if monthly_inc > DSTI_INCOME_THRESHOLD else DSTI_LIMIT_LOW
-        if (dsti / 100) > limit:
-            rejections.append("Rejection: DSTI limit.")
-
-        required_cash = MIN_CASH_APPLICANT + (data_inputs['num_dependents'] * MIN_CASH_DEPENDENT)
-        if cash_left < required_cash:
-            rejections.append("Rejection: Income too low.")
-
-        final_decision = "NEGATIVE" if rejections else "POSITIVE"
-
-        # --- SHAP ---
-        shap_img_path = os.path.join(BASE_DIR, 'static', 'current_shap.png')
-        if model and hasattr(model, 'estimators_'):
-            try:
-                plt.clf()
-                explainer = shap.TreeExplainer(model)
-                shap_values = explainer.shap_values(input_df)
-
-                if isinstance(shap_values, list):
-                    sv = shap_values[1][0]
-                    ev = explainer.expected_value[1]
-                elif len(shap_values.shape) == 3:  # New SHAP (1, 6, 2)
-                    sv = shap_values[0, :, 1]
-                    ev = explainer.expected_value[1]
-                else:
-                    sv = shap_values[0]
-                    ev = explainer.expected_value
-
-                shap.force_plot(
-                    ev,
-                    sv,
-                    input_df.iloc[0], # Take the first row (the only one)
-                    matplotlib=True,
-                    show=False
-                )
-
-                plt.savefig(shap_img_path, bbox_inches='tight', dpi=100)
-
-            except Exception as e:
-                print(f"SHAP error: {e}")
-
+        result = service.predict(application)
+        explanation = explain_default_prediction(service.artifact, application)
         return render_template(
-            'index.html',
+            "index.html",
             success=True,
-            data=data_inputs,
-            base=round(base_prob*100, 1),
-            adj=round(adj*100, 1),
-            prob=round(final_prob*100, 1),
-            rata=round(rata),
-            dsti=round(dsti, 1),
-            left=round(cash_left),
-            decision=final_decision,
-            rejections=rejections,
-            time_stamp=time.time()
+            data=application,
+            result=result,
+            explanation=explanation,
+            probability_default_percent=round(result.probability_default * 100, 1),
+            decision_probability_percent=(
+                None
+                if result.decision.probability_default is None
+                else round(result.decision.probability_default * 100, 1)
+            ),
         )
 
-    return render_template('index.html', success=False)
+    return app
 
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+app = None
+
+
+if __name__ == "__main__":
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    create_app().run(debug=debug, port=int(os.environ.get("PORT", "5000")))

@@ -1,0 +1,57 @@
+version: "2026.08-demo"
+artifact_version: "1.0"
+decision_threshold: 0.42
+risk_bands:
+  lower_risk_max: 0.20
+  elevated_risk_max: 0.42
+messages:
+  disclaimer: "Prototyp DSS pokazuje rekomendacje ryzyka. Nie jest oficjalna decyzja bankowa."
+rules:
+  - id: "DSTI_SOFT_50"
+    name: "DSTI soft indicator"
+    description: "Demonstracyjne progi polityki kredytowej przyjęte na potrzeby prototypu."
+    type: "soft_flag"
+    field: "dsti_after_new_loan"
+    operator: ">"
+    threshold: 50
+    unit: "percent"
+    reason: "DSTI after the requested loan exceeds 50%."
+    source: "Demonstracyjne założenie prototypu; nie wymóg KNF."
+    version: "2026.08-demo"
+    user_message: "DSTI po nowej racie przekracza demonstracyjny próg 50%."
+  - id: "DSTI_HARD_65"
+    name: "DSTI policy stop"
+    description: "Demonstracyjne progi polityki kredytowej przyjęte na potrzeby prototypu."
+    type: "hard_stop"
+    field: "dsti_after_new_loan"
+    operator: ">"
+    threshold: 65
+    unit: "percent"
+    reason: "DSTI after the requested loan exceeds 65%."
+    source: "Demonstracyjne założenie prototypu; nie wymóg KNF."
+    version: "2026.08-demo"
+    user_message: "DSTI po nowej racie przekracza demonstracyjny próg 65%."
+  - id: "RESIDENCY_TERM_REVIEW"
+    name: "Right-to-reside manual review"
+    description: "Neutral review if legal right to reside does not cover the requested loan term."
+    type: "hard_stop"
+    field: "residency_covers_term"
+    operator: "=="
+    threshold: false
+    unit: "boolean"
+    reason: "Legal right to reside may not cover the full loan term."
+    source: "Demonstracyjne założenie prototypu."
+    version: "2026.08-demo"
+    user_message: "Wymagana ręczna weryfikacja prawa pobytu na okres kredytu."
+  - id: "DISPOSABLE_INCOME_REVIEW"
+    name: "Disposable income manual review"
+    description: "Manual review when disposable monthly income is below the demonstration minimum."
+    type: "hard_stop"
+    field: "cash_left"
+    operator: "<"
+    threshold: 2000
+    unit: "PLN"
+    reason: "Disposable monthly income is below demonstration minimum."
+    source: "Demonstracyjne założenie prototypu."
+    version: "2026.08-demo"
+    user_message: "Dochód rozporządzalny po zobowiązaniach wymaga ręcznej weryfikacji."

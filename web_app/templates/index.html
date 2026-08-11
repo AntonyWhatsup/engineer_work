@@ -1,389 +1,144 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Credit Risk AI - Hybrid Expert System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --bg-dark: #121212;
-            --bg-card: #1e1e1e;
-            --primary-purple: #9c27b0;
-            --accent-orange: #ff9800;
-            --text-main: #e0e0e0;
-            --text-muted: #aaaaaa;
-            --border-color: #333333;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow-x: hidden;
-        }
-
-        /* --- Animations for Grid Sliding --- */
-        .col-transition {
-            transition: flex 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
-                        max-width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-
-        /* --- Sidebar Style --- */
-        .sidebar {
-            background-color: var(--bg-card);
-            border-right: 1px solid var(--border-color);
-            min-height: 100vh;
-            padding: 2rem 1.5rem;
-        }
-
-        .brand-title {
-            color: white;
-            font-size: 1.25rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-        }
-        .brand-subtitle {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            color: var(--text-main);
-            font-weight: 500;
-            font-size: 0.9rem;
-            margin-bottom: 0.3rem;
-        }
-
-        .form-control, .form-select {
-            background-color: #2a2a2a;
-            border: 1px solid #444;
-            color: white;
-            font-size: 0.9rem;
-            border-radius: 6px;
-        }
-
-        .form-control:focus, .form-select:focus {
-            background-color: #333;
-            border-color: var(--primary-purple);
-            color: white;
-            box-shadow: 0 0 0 0.25rem rgba(156, 39, 176, 0.25);
-        }
-
-        .is-invalid {
-            border-color: #dc3545 !important;
-            background-color: rgba(220, 53, 69, 0.05) !important;
-        }
-
-        .btn-evaluate {
-            background: linear-gradient(45deg, var(--primary-purple), #673ab7);
-            border: none;
-            color: white;
-            font-weight: bold;
-            padding: 0.7rem;
-            border-radius: 6px;
-            width: 100%;
-            margin-top: 1.5rem;
-            transition: all 0.3s;
-        }
-
-        .btn-evaluate:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4);
-        }
-
-        /* --- Main Content --- */
-        .main-content {
-            padding: 2rem;
-        }
-
-        .nav-tabs {
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 1.5rem;
-        }
-
-        .nav-tabs .nav-link {
-            color: var(--text-muted);
-            border: none;
-            padding: 0.5rem 1rem;
-            font-size: 0.95rem;
-            background: none;
-        }
-
-        .nav-tabs .nav-link:hover, .nav-tabs .nav-link.active {
-            color: white;
-            border: none;
-        }
-        .nav-tabs .nav-link.active {
-            border-bottom: 3px solid var(--accent-orange);
-            font-weight: bold;
-        }
-
-        .custom-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            height: 100%;
-        }
-
-        .card-title-custom {
-            font-size: 1rem;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-        }
-        .card-title-custom i {
-            margin-right: 0.5rem;
-            color: var(--accent-orange);
-        }
-
-        .big-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            line-height: 1;
-        }
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.7rem;
-            font-size: 0.95rem;
-        }
-        .stat-label { color: var(--text-muted); }
-        .stat-value { color: white; font-weight: 500; }
-
-        .shap-container {
-            background-color: white; 
-            padding: 1rem;
-            border-radius: 6px;
-            margin-top: 1rem;
-        }
-
-        .alert-knf { background-color: rgba(211, 47, 47, 0.1); border: 1px solid #d32f2f; color: #ffcdd2; }
-        .alert-ok { background-color: rgba(56, 142, 60, 0.1); border: 1px solid #388e3c; color: #c8e6c9; }
-
-        /* --- Inline Help Panel --- */
-        .help-item {
-            margin-bottom: 1.2rem;
-            padding-bottom: 1.2rem;
-            border-bottom: 1px dashed #444;
-        }
-        .help-item:last-child { border-bottom: none; }
-        .help-title {
-            color: var(--accent-orange);
-            font-weight: 600;
-            font-size: 0.95rem;
-            margin-bottom: 0.3rem;
-        }
-        .help-desc {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            line-height: 1.4;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Credit Default Risk DSS Prototype</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root { --bg:#161819; --panel:#232628; --text:#f2f2f2; --muted:#aeb4b8; --line:#3a3f44; --accent:#2ea8a1; --warn:#d2a43a; --bad:#d65a5a; --ok:#62b26f; }
+    body { background: var(--bg); color: var(--text); font-family: Segoe UI, Arial, sans-serif; }
+    .layout { min-height: 100vh; display: grid; grid-template-columns: minmax(320px, 420px) 1fr; }
+    .sidebar { background: var(--panel); border-right: 1px solid var(--line); padding: 24px; }
+    .main { padding: 28px; }
+    .form-control, .form-select { background: #101213; color: var(--text); border: 1px solid var(--line); }
+    .form-control:focus, .form-select:focus { background: #101213; color: var(--text); border-color: var(--accent); box-shadow: none; }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: #071010; font-weight: 700; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px; margin-bottom: 16px; }
+    .muted { color: var(--muted); }
+    .status-LOWER_RISK { border-color: var(--ok); }
+    .status-ELEVATED_RISK { border-color: var(--warn); }
+    .status-HIGH_RISK, .status-POLICY_STOP { border-color: var(--bad); }
+    .status-MANUAL_REVIEW { border-color: var(--warn); }
+    .badge-status { font-size: 0.9rem; letter-spacing: 0; }
+    .metric { display: flex; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); padding: 8px 0; }
+    .metric:last-child { border-bottom: 0; }
+    code { color: #9ee3dd; }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid var(--line); } }
+  </style>
 </head>
 <body>
-
-<div class="container-fluid p-0 overflow-hidden">
-    <div class="row g-0 w-100 flex-nowrap" style="min-height: 100vh;">
-        
-        <div id="helpContentCol" class="col-0 col-transition" style="max-width: 0; opacity: 0; background-color: var(--bg-card); border-right: 1px solid var(--border-color); overflow-x: hidden; height: 100vh;">
-            <div style="width: 320px; padding: 2rem 1.5rem; overflow-y: auto; height: 100%;">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="m-0"><i class="fa-solid fa-circle-info me-2" style="color: var(--primary-purple);"></i> Przewodnik</h5>
-                    <button type="button" class="btn-close btn-close-white" onclick="toggleHelpPanel()"></button>
-                </div>
-
-                <p class="text-muted" style="font-size: 0.85rem;">Explanation of Hybrid logic (AI + KNF):</p>
-                <div class="help-item">
-                    <div class="help-title">Gwarantowana kwota & Okres</div>
-                    <div class="help-desc">Loan amount and repayment time. Based on them, a new installment is calculated.</div>
-                </div>
-                <div class="help-item">
-                    <div class="help-title">Obywatelstwo & Pobyt</div>
-                    <div class="help-desc">Rule (Hard Rule): Lack of permanent residence among foreigners often generates automatic refusal.</div>
-                </div>
-                <div class="help-item">
-                    <div class="help-title">Rodzaj zatrudnienia</div>
-                    <div class="help-desc">Correction to AI result: UoP (+10%), B2B short (-25%).</div>
-                </div>
-                <div class="help-item">
-                    <div class="help-title">DTI (Debt-to-Income)</div>
-                    <div class="help-desc">Limit max 50-65%. If the new installment exceeds it, we reject it automatically.</div>
-                </div>
-                <div class="help-item">
-                    <div class="help-title">FICO Score</div>
-                    <div class="help-desc">300 (bad story) to 850 (perfect). This is the main prediction engine of the AI ​​model.</div>
-                </div>
-                <div class="help-item">
-                    <div class="help-title">Osoby na utrzymaniu</div>
-                    <div class="help-desc">Each person increases the "social minimum". Lack of sufficient income after paying installments (Disposable Income) = Denial.</div>
-                </div>
-            </div>
+<div class="layout">
+  <aside class="sidebar">
+    <h1 class="h4">Credit Default Risk DSS</h1>
+    <p class="muted">Educational decision-support prototype. It estimates <code>P(Default)</code>; it does not issue a bank decision.</p>
+    {% if errors %}
+      <div class="alert alert-danger">
+        <strong>Validation errors</strong>
+        <ul class="mb-0">
+          {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    <form method="post" novalidate>
+      <label class="form-label">Loan amount</label>
+      <input class="form-control mb-3" name="loan_amnt" type="number" step="0.01" value="{{ data.loan_amnt if data else '' }}">
+      <label class="form-label">Term</label>
+      <select class="form-select mb-3" name="term">
+        <option value="36" {% if data and data.term|string == '36' %}selected{% endif %}>36 months</option>
+        <option value="60" {% if data and data.term|string == '60' %}selected{% endif %}>60 months</option>
+      </select>
+      <label class="form-label">APR for payment calculator (%)</label>
+      <input class="form-control mb-3" name="apr" type="number" step="0.01" value="{{ data.apr if data else '10' }}">
+      <label class="form-label">Annual income</label>
+      <input class="form-control mb-3" name="annual_inc" type="number" step="0.01" value="{{ data.annual_inc if data else '' }}">
+      <label class="form-label">Current DTI (%)</label>
+      <input class="form-control mb-3" name="dti" type="number" step="0.01" value="{{ data.dti if data else '' }}">
+      <label class="form-label">FICO low</label>
+      <input class="form-control mb-3" name="fico_range_low" type="number" step="1" value="{{ data.fico_range_low if data else '' }}">
+      <label class="form-label">Employment length (years)</label>
+      <input class="form-control mb-3" name="emp_length" type="number" step="0.1" value="{{ data.emp_length if data else '5' }}">
+      <label class="form-label">Home ownership</label>
+      <select class="form-select mb-3" name="home_ownership">
+        {% for option in ['RENT','OWN','MORTGAGE','OTHER'] %}
+          <option value="{{ option }}" {% if data and data.home_ownership == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+      <label class="form-label">Purpose</label>
+      <select class="form-select mb-3" name="purpose">
+        {% for option in ['debt_consolidation','credit_card','home_improvement','major_purchase','other'] %}
+          <option value="{{ option }}" {% if data and data.purpose == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+      <label class="form-label">Verification status</label>
+      <select class="form-select mb-3" name="verification_status">
+        {% for option in ['Verified','Source Verified','Not Verified'] %}
+          <option value="{{ option }}" {% if data and data.verification_status == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+      <label class="form-label">Employment type for policy indicators</label>
+      <select class="form-select mb-3" name="employment_type">
+        {% for option in ['UOP_UNDEFINED','UOP_FIXED','B2B_GE_12M','B2B_LT_12M','OTHER'] %}
+          <option value="{{ option }}" {% if data and data.employment_type == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+      <label class="form-label">Dependents</label>
+      <input class="form-control mb-3" name="num_dependents" type="number" step="1" value="{{ data.num_dependents if data else '0' }}">
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="residency_covers_term" value="true" {% if not data or data.residency_covers_term %}checked{% endif %}>
+        <label class="form-check-label">Right to reside covers the requested loan term</label>
+      </div>
+      <button class="btn btn-primary w-100" type="submit">Estimate default risk</button>
+    </form>
+  </aside>
+  <main class="main">
+    {% if success %}
+      <section class="panel status-{{ result.decision.status }}">
+        <div class="d-flex justify-content-between align-items-start gap-3">
+          <div>
+            <h2 class="h4 mb-1">DSS recommendation: {{ result.decision.status }}</h2>
+            <p class="muted mb-0">Probability is calibrated model <code>P(Default)</code>. Policy rules are shown separately.</p>
+          </div>
+          <span class="badge bg-secondary badge-status">{{ probability_default_percent }}% P(Default)</span>
         </div>
-
-        <div class="col-3 sidebar col-transition" style="min-width: 300px; overflow-y: auto; height: 100vh;">
-            <div class="brand-title">Credit Risk AI Explorer</div>
-            <div class="brand-subtitle">
-                Predict, Adjust, Explain (v3.0)
-                <button class="btn btn-sm btn-outline-secondary mt-3 w-100 text-start" type="button" onclick="toggleHelpPanel()" style="border-color: #444;">
-                    <i class="fa-solid fa-table-columns" style="color: var(--accent-orange);"></i>Show/Hide guide                </button>
-            </div>
-            
-            <form action="/" method="post" novalidate>
-                <div class="mb-3">
-                    <label class="form-label">Gwatantowana kwota (PLN)</label>
-                    <input type="number" step="any" name="loan_amnt" class="form-control {% if missing_fields and 'loan_amnt' in missing_fields %}is-invalid{% endif %}" placeholder="np. 50000" value="{{ data.loan_amnt if data else '' }}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Okres kredytowania</label>
-                    <select name="term" class="form-select">
-                        <option value="36m" {% if data and data.term == '36m' %}selected{% endif %}>36 months</option>
-                        <option value="60m" {% if data and data.term == '60m' %}selected{% endif %}>60 months</option>
-                    </select>
-                </div>
-                <div class="row">
-                    <div class="col-6 mb-3">
-                        <label class="form-label">Obywatelstwo</label>
-                        <select name="citizenship" class="form-select">
-                            <option value="PL" {% if data and data.citizenship == 'PL' %}selected{% endif %}>PL</option>
-                            <option value="UA" {% if data and data.citizenship == 'UA' %}selected{% endif %}>UA</option>
-                        </select>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <label class="form-label">Karta pobytu</label>
-                        <select name="residency" class="form-select">
-                            <option value="Staly" {% if data and data.residency == 'Staly' %}selected{% endif %}>Constant</option>
-                            <option value="Brak" {% if data and data.residency == 'Brak' %}selected{% endif %}>Brak</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Rodzaj zatrudnienia</label>
-                    <select name="employment_type" class="form-select">
-                        <option value="UoP_Nd" {% if data and data.employment_type == 'UoP_Nd' %}selected{% endif %}>UoP (undefined)</option>
-                        <option value="B2B_12m" {% if data and data.employment_type == 'B2B_12m' %}selected{% endif %}>B2B (> 12m)</option>
-                        <option value="B2B_lt12m" {% if data and data.employment_type == 'B2B_lt12m' %}selected{% endif %}>B2B (< 12m)</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Annual income (PLN)</label>
-                    <input type="number" step="any" name="annual_inc" class="form-control {% if missing_fields and 'annual_inc' in missing_fields %}is-invalid{% endif %}" value="{{ data.annual_inc if data else '' }}">
-                </div>
-                <div class="row">
-                    <div class="col-6 mb-3">
-                        <label class="form-label">DTI (%)</label>
-                        <input type="number" step="any" name="dti" class="form-control {% if missing_fields and 'dti' in missing_fields %}is-invalid{% endif %}" value="{{ data.dti if data else '' }}">
-                    </div>
-                    <div class="col-6 mb-3">
-                        <label class="form-label">FICO Score</label>
-                        <input type="number" step="any" name="fico" class="form-control {% if missing_fields and 'fico' in missing_fields %}is-invalid{% endif %}" value="{{ data.fico if data else '' }}">
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Number of dependents</label>
-                    <input type="number" name="num_dependents" class="form-control" value="{{ data.num_dependents if data else '' }}">
-                </div>
-                <button type="submit" class="btn btn-evaluate"><i class="fa-solid fa-brain me-2"></i> Ocena Ryzyka</button>
-            </form>
-        </div>
-
-        <div id="mainContentCol" class="col-9 main-content col-transition" style="overflow-y: auto; height: 100vh;">
-            {% if success %}
-                <h3 class="mb-4 text-white">Raport oceny ryzyka</h3>
-                <ul class="nav nav-tabs" role="tablist">
-                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#summary" type="button"><i class="fa-solid fa-chart-line me-2"></i>Wynik i Decyzja</button></li>
-                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#explain" type="button"><i class="fa-solid fa-eye me-2"></i>SHAP</button></li>
-                </ul>
-
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="summary">
-                        <div class="row">
-                            <div class="col-12 mb-3">
-                                <div class="custom-card border-{{ 'danger alert-knf' if decision == 'NEGATYWNA' else 'success alert-ok' }}">
-                                    <div class="row align-items-center">
-                                        <div class="col-8">
-                                            <h4 class="m-0">Rekomendacja: <strong>{{ decision }}</strong></h4>
-                                            {% if rejections %}
-                                                <ul class="mt-2 mb-0 text-danger" style="font-size:0.9rem;">
-                                                {% for rej in rejections %}<li>{{ rej }}</li>{% endfor %}
-                                                </ul>
-                                            {% else %}
-                                                <p class="text-success m-0 mt-1">The application meets the formal criteria.</p>
-                                            {% endif %}
-                                        </div>
-                                        <div class="col-4 text-end">
-                                            <div class="big-number text-white">{{ prob }}%</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-xl-6 col-12 mb-3">
-                                <div class="custom-card">
-                                    <div class="card-title-custom"><i class="fa-solid fa-sack-dollar"></i>Capacity and Quotas</div>
-                                    <div class="stat-row"><span class="stat-label">Monthly income</span><span class="stat-value">{{ (data.annual_inc / 12) | int }} PLN</span></div>
-                                    <div class="stat-row"><span class="stat-label">Szacowana rata</span><span class="stat-value text-warning">{{ rata }} PLN</span></div>
-                                    <div class="stat-row"><span class="stat-label">DSTI indicator</span><span class="stat-value">{{ dsti }}%</span></div>
-                                    <hr style="border-color:#444;"><div class="stat-row"><span class="stat-label">Disposable income</span><span class="stat-value {{ 'text-danger' if left < 2000 else 'text-success' }}">{{ left }} PLN</span></div>
-                                </div>
-                            </div>
-                            <div class="col-xl-6 col-12 mb-3">
-                                <div class="custom-card">
-                                    <div class="card-title-custom"><i class="fa-solid fa-code-merge"></i>Korekta (Hybrid)</div>
-                                    <div class="stat-row"><span class="stat-label">Bazowe P(Paid) z AI</span><span class="stat-value">{{ base }}%</span></div>
-                                    <div class="stat-row"><span class="stat-label">Korekta ekspercka</span><span class="stat-value {{ 'text-success' if adj > 0 else 'text-danger' }}">{{ '+' if adj > 0 else '' }}{{ adj }}%</span></div>
-                                    <hr style="border-color:#444;"><div class="stat-row"><span class="stat-label fw-bold">Finalne P(Paid)</span><span class="stat-value big-number" style="font-size:2rem;">{{ prob }}%</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="explain">
-                        <div class="custom-card">
-                            <div class="card-title-custom"><i class="fa-solid fa-magnifying-glass-chart"></i>SHAP Force Plot</div>
-                            <div class="shap-container text-center"><img src="{{ url_for('static', filename='current_shap.png') }}?t={{ time_stamp }}" class="img-fluid"></div>
-                        </div>
-                    </div>
-                </div>
-            {% else %}
-                <div class="text-center text-muted pt-5">
-                    <i class="fa-solid fa-arrow-left fa-3x mb-3"></i>
-                    <h4>Complete the form on the left</h4>
-                </div>
-            {% endif %}
-        </div>
-    </div>
+      </section>
+      <section class="panel">
+        <h3 class="h5">Policy Indicators</h3>
+        <div class="metric"><span>New monthly payment</span><strong>{{ result.policy.indicators.new_monthly_payment | round(2) }} PLN</strong></div>
+        <div class="metric"><span>DSTI after new loan</span><strong>{{ result.policy.indicators.dsti_after_new_loan | round(2) }}%</strong></div>
+        <div class="metric"><span>Disposable monthly income</span><strong>{{ result.policy.indicators.cash_left | round(2) }} PLN</strong></div>
+        {% if result.decision.hard_stop_reasons %}
+          <h4 class="h6 mt-3">Hard-stop/manual-review reasons</h4>
+          <ul>{% for reason in result.decision.hard_stop_reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if result.decision.soft_flag_reasons %}
+          <h4 class="h6 mt-3">Soft policy flags</h4>
+          <ul>{% for reason in result.decision.soft_flag_reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+        {% endif %}
+      </section>
+      <section class="panel">
+        <h3 class="h5">ML Explanation</h3>
+        <p class="muted">{{ explanation.note }}</p>
+        {% if explanation.top_features %}
+          <div class="table-responsive">
+            <table class="table table-dark table-sm align-middle">
+              <thead><tr><th>Transformed feature</th><th>SHAP contribution to default class</th></tr></thead>
+              <tbody>
+                {% for item in explanation.top_features %}
+                  <tr><td>{{ item.feature }}</td><td>{{ item.contribution_to_default | round(5) }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </section>
+    {% else %}
+      <section class="panel">
+        <h2 class="h4">Enter an application</h2>
+        <p class="muted mb-0">The app requires a valid trained artifact and will not display invented model scores.</p>
+      </section>
+    {% endif %}
+  </main>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    function toggleHelpPanel() {
-        const mainCol = document.getElementById('mainContentCol');
-        const helpCol = document.getElementById('helpContentCol');
-
-        if (helpCol.classList.contains('col-0')) {
-// Open the tooltip panel on the left            helpCol.classList.remove('col-0');
-            helpCol.classList.add('col-3');
-            helpCol.style.maxWidth = '100%';
-            helpCol.style.opacity = '1';
-            
-// Compress the main content on the right            mainCol.classList.remove('col-9');
-            mainCol.classList.add('col-6');
-        } else {
-// Hide the tooltip            helpCol.classList.remove('col-3');
-            helpCol.classList.add('col-0');
-            helpCol.style.maxWidth = '0';
-            helpCol.style.opacity = '0';
-            
-// Expand the main content back            mainCol.classList.remove('col-6');
-            mainCol.classList.add('col-9');
-        }
-    }
-</script>
 </body>
 </html>

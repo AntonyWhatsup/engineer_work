@@ -1,11 +1,8 @@
 import os
-import sys
 
-# Add the web_app directory to python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'web_app')))
+from web_app.app import create_app
 
-from web_app.app import app
-
-if __name__ == '__main__':
-    print("Starting Credit Risk AI web application from root...")
-    app.run(debug=True, port=5000)
+if __name__ == "__main__":
+    print("Starting Credit Default Risk DSS prototype...")
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    create_app().run(debug=debug, port=int(os.environ.get("PORT", "5000")))

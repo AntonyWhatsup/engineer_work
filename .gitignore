@@ -6,6 +6,7 @@ __pycache__/
 *.csv
 *.xlsx
 data/
+artifacts/
 recomented_file.py
 .venv/
 
