@@ -1,44 +1,116 @@
-# Credit Risk Assessment System (XAI & Hybrid AI)
+# Credit Default Risk DSS Prototype
 
-The repository contains an engineering project of a scoring system that combines machine learning (Random Forest) with strict rules of the Polish Financial Supervision Authority (KNF).
+Educational decision-support prototype for credit default-risk assessment. The system estimates:
 
-## 🚀 How to run the project?
-
-### 1. Install dependencies:
-Ensure you have Python installed (recommended 3.10+). In the terminal, type:
-```bash
-pip install -r requirements.txt
+```text
+target = 1 means default / Charged Off
+target = 0 means Fully Paid
+predict_proba(...)[1] = P(Default)
 ```
 
-### 2. Run the application:
-Type the following command in the main project folder to start the Flask server:
+It is not a bank production system and does not issue an official credit decision. The final decision remains with a human reviewer.
+
+## Architecture
+
+- `src/train.py` trains a reproducible sklearn pipeline and writes `artifacts/model.joblib`.
+- `src/training/` contains LendingClub preparation, preprocessing, model comparison, metrics, metadata, and optional subgroup evaluation helpers.
+- `src/inference/` loads a validated artifact and returns calibrated `P(Default)`.
+- `src/validation/`, `src/rules/`, and `src/decision/` keep server validation, policy indicators, and hybrid recommendation logic separate.
+- `src/explainability/` explains the ML default-risk prediction only. Policy rules are not mixed into SHAP.
+- `web_app/` is a Flask UI over the domain services.
+- `config/policy_rules.yaml` contains demonstration thresholds and rule messages.
+
+## Environment
+
+Use Python 3.10+.
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+## Data
+
+The full LendingClub CSV is not committed. Place the accepted-loans CSV at a local path, for example:
+
+```text
+data/accepted_loans.csv
+```
+
+Training keeps only finished loans with `loan_status` equal to `Fully Paid` or `Charged Off`. The target is formed exactly as `Charged Off -> 1`, `Fully Paid -> 0`. Leakage-prone lender/outcome fields such as `grade`, `sub_grade`, `int_rate`, recovery/payment columns, and hardship/settlement columns are not part of the default raw feature schema.
+
+APR is collected by the web form only for the payment calculator and policy indicators. APR is not passed into the ML pipeline.
+
+## Training
+
+```bash
+python -m src.train --data data/accepted_loans.csv --output artifacts/
+```
+
+The training command compares Logistic Regression, Decision Tree, and Random Forest on the same preprocessing. Random Forest is calibrated on validation data. The decision threshold is selected on validation data, not test data. The untouched test split is used for final metrics.
+
+Generated files include:
+
+- `artifacts/model.joblib`
+- `artifacts/metrics.json`
+- `artifacts/calibration_curve.csv`
+- `artifacts/calibration_curve.png`
+
+Do not commit large datasets, generated model files, or random plots unless there is a separate review reason.
+
+## Run Flask
+
+The app fails fast if `artifacts/model.joblib` is missing, corrupted, or metadata-incompatible.
+
 ```bash
 python run_app.py
 ```
-After starting, open the browser at: [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
 
-### 3. Model analysis and training (optional):
-Notebooks are located in the `notebooks/` folder. If you want to refresh the EDA analysis or retrain the model, run the appropriate `.ipynb` files in the Jupyter environment:
-- `notebooks/analiza_danych.ipynb` (EDA analysis and data cleaning)
-- `notebooks/model_training.ipynb` (Random Forest classifier training process)
+Optional:
 
----
+```bash
+set MODEL_ARTIFACT_PATH=artifacts\model.joblib
+set FLASK_DEBUG=1
+python run_app.py
+```
 
-## 📂 Directory and file structure
+Health check:
 
-- **`notebooks/`**
-  - `analiza_danych.ipynb` — EDA (Exploratory Data Analysis) process on a dataset of 200,000 records. Contains Data Leakage elimination and correlation analysis.
-  - `model_training.ipynb` — training of a balanced Random Forest model saving weights and columns.
-- **`models/`**
-  - `credit_model.pkl` — binary file of the trained Random Forest classifier (excluded from repository due to size).
-  - `model_columns.pkl` — list of mapped columns (One-Hot Encoding) used for input validation in the web app.
-- **`web_app/`**
-  - `app.py` — Flask application engine combining Legal Gatekeeper, KNF rules (DSTI), expert weights, and SHAP interpretability.
-  - `templates/index.html` — interactive, modern UI template in Dark Mode with an explanation panel.
-  - `static/current_shap.png` — generated explanation chart (SHAP Force Plot) for the last prediction.
-- **`data/`**
-  - `accepted_2007_to_2018Q4.csv` — input LendingClub dataset (1.6 GB, excluded from repository).
-- **`run_app.py`** — script to easily run the application directly from the root folder.
-- **`requirements.txt`** — list of dependent libraries.
-- **`patch_notes.txt`** — project release history (changelog).
+```bash
+curl http://127.0.0.1:5000/health
+```
 
+## Hybrid Algorithm
+
+1. Validate all submitted fields server-side.
+2. Calculate policy indicators, including annuity payment, DSTI after the new loan, disposable income, and whether residence rights cover the term.
+3. Evaluate configured hard-stop and soft-flag policy rules.
+4. If a hard stop fires, return `MANUAL_REVIEW` or `POLICY_STOP` with reasons.
+5. If no hard stop fires, compute calibrated `P(Default)`.
+6. Compare `P(Default)` with configured risk bands and threshold.
+7. Return one DSS recommendation: `LOWER_RISK`, `ELEVATED_RISK`, `HIGH_RISK`, `MANUAL_REVIEW`, or `POLICY_STOP`.
+8. SHAP explains only the ML prediction for the default class. Rule effects are displayed separately.
+
+The DSTI 50% and 65% thresholds are demonstration credit-policy assumptions for the prototype, not mandatory KNF thresholds.
+
+## Tests And Checks
+
+```bash
+python -m pytest
+ruff check .
+ruff format --check .
+```
+
+Tests use small synthetic fixtures and do not require the full LendingClub dataset.
+
+## Model Artifact Metadata
+
+The saved artifact includes artifact version, training time, target semantics, class labels, raw feature schema, policy version, decision threshold, library versions, random seed, selected model, and validation/test metrics. Flask validates this metadata during startup.
+
+## Fairness And Limitations
+
+The repository does not claim full fairness validation because the default schema does not include a suitable, ethically acceptable set of sensitive attributes. A subgroup evaluation helper exists for controlled analysis, and tests cover it on synthetic data. Real deployment would need a legally reviewed fairness protocol, proxy-variable analysis, monitoring for historical bias, and human appeal processes.
+
+Methodological limitations remain: LendingClub data may not represent current Polish lending, macroeconomic drift can reduce validity, proxy variables can encode historical bias, and synthetic tests cannot substitute for full data validation.
