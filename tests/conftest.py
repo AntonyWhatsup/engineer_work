@@ -5,7 +5,6 @@ import pytest
 from sklearn.calibration import CalibratedClassifierCV, FrozenEstimator
 
 from src.config import load_policy_config
-from src.decision.hybrid import choose_threshold
 from src.training.artifact import ModelArtifact, make_metadata, save_artifact
 from src.training.metrics import evaluate_predictions
 from src.training.pipeline import build_pipeline, candidate_models
@@ -58,11 +57,11 @@ def artifact_path(tmp_path):
     y = data["target"]
     base = build_pipeline(candidate_models(7)["random_forest"])
     base.fit(x, y)
-    calibrated = CalibratedClassifierCV(FrozenEstimator(base), method="sigmoid")
+    calibrated = CalibratedClassifierCV(FrozenEstimator(base), method="sigmoid", cv=3)
     calibrated.fit(x, y)
     probs = calibrated.predict_proba(x)[:, 1]
-    threshold = choose_threshold(y.tolist(), probs.tolist(), min_recall_default=0.6)
     policy = load_policy_config()
+    threshold = float(policy["decision_threshold"])
     metadata = make_metadata(
         {"synthetic_smoke": evaluate_predictions(y, probs, threshold)},
         threshold=threshold,

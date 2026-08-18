@@ -5,12 +5,13 @@ import math
 import pandas as pd
 import pytest
 
-from src.config import load_policy_config
+from src.config import load_policy_config, validate_policy_config
 from src.decision.hybrid import choose_threshold, make_decision
 from src.decision.payment import annuity_payment
 from src.rules.engine import evaluate_policy
-from src.training.artifact import load_artifact
-from src.training.data import map_target, prepare_lendingclub_frame
+from src.training.artifact import ModelArtifact, load_artifact, save_artifact
+from src.training.data import map_target, prepare_lendingclub_frame, split_train_validation_test
+from src.training.metrics import evaluate_predictions
 from src.validation.schema import validate_application
 
 
@@ -91,3 +92,44 @@ def test_artifact_metadata_and_inference_schema(artifact_path, valid_payload):
     frame = app.to_model_frame()
     probability_default = artifact.pipeline.predict_proba(frame)[0][1]
     assert 0 <= probability_default <= 1
+
+
+def test_issue_date_is_parsed_before_chronological_sorting():
+    rows = []
+    dates = ["Dec-2020", "Jan-2019", "Feb-2019", "Jan-2020", "Mar-2020"] * 6
+    for index, date in enumerate(dates):
+        rows.append({"issue_d": date, "target": index % 2})
+    train, validation, test = split_train_validation_test(pd.DataFrame(rows))
+    assert train["issue_d"].max() <= validation["issue_d"].min()
+    assert validation["issue_d"].max() <= test["issue_d"].min()
+
+
+def test_split_rejects_single_class_partition():
+    frame = pd.DataFrame({"target": [0] * 20 + [1] * 10, "issue_d": pd.date_range("2020-01-01", periods=30)})
+    with pytest.raises(ValueError, match="both target classes"):
+        split_train_validation_test(frame)
+
+
+def test_metrics_reject_single_class():
+    with pytest.raises(ValueError, match="both target classes"):
+        evaluate_predictions([0, 0], [0.1, 0.2], 0.42)
+
+
+def test_policy_threshold_matches_risk_bands():
+    policy = validate_policy_config()
+    assert policy["decision_threshold"] == policy["risk_bands"]["elevated_risk_max"]
+
+
+def test_artifact_without_predict_proba_is_blocked(artifact_path, tmp_path):
+    artifact = load_artifact(artifact_path)
+    bad_path = tmp_path / "bad" / "model.joblib"
+    save_artifact(bad_path, ModelArtifact(object(), artifact.metadata))
+    with pytest.raises(RuntimeError, match="predict_proba"):
+        load_artifact(bad_path)
+
+
+def test_corrupt_artifact_and_metadata_mismatch_are_blocked(artifact_path):
+    metadata_path = artifact_path.with_name("metadata.json")
+    metadata_path.write_text("{}", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="do not match"):
+        load_artifact(artifact_path)
