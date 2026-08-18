@@ -1,144 +1,209 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="uk">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Credit Default Risk DSS Prototype</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <title>Credit Default Risk DSS</title>
   <style>
-    :root { --bg:#161819; --panel:#232628; --text:#f2f2f2; --muted:#aeb4b8; --line:#3a3f44; --accent:#2ea8a1; --warn:#d2a43a; --bad:#d65a5a; --ok:#62b26f; }
-    body { background: var(--bg); color: var(--text); font-family: Segoe UI, Arial, sans-serif; }
-    .layout { min-height: 100vh; display: grid; grid-template-columns: minmax(320px, 420px) 1fr; }
-    .sidebar { background: var(--panel); border-right: 1px solid var(--line); padding: 24px; }
-    .main { padding: 28px; }
-    .form-control, .form-select { background: #101213; color: var(--text); border: 1px solid var(--line); }
-    .form-control:focus, .form-select:focus { background: #101213; color: var(--text); border-color: var(--accent); box-shadow: none; }
-    .btn-primary { background: var(--accent); border-color: var(--accent); color: #071010; font-weight: 700; }
-    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px; margin-bottom: 16px; }
-    .muted { color: var(--muted); }
-    .status-LOWER_RISK { border-color: var(--ok); }
-    .status-ELEVATED_RISK { border-color: var(--warn); }
-    .status-HIGH_RISK, .status-POLICY_STOP { border-color: var(--bad); }
-    .status-MANUAL_REVIEW { border-color: var(--warn); }
-    .badge-status { font-size: 0.9rem; letter-spacing: 0; }
-    .metric { display: flex; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); padding: 8px 0; }
-    .metric:last-child { border-bottom: 0; }
-    code { color: #9ee3dd; }
-    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid var(--line); } }
+    :root {
+      --bg: #0b1220; --panel: #111c2e; --panel-soft: #17243a; --text: #f4f7fb;
+      --muted: #9fb0c8; --line: #273a55; --accent: #45d0c3; --accent-2: #5c8dff;
+      --warn: #f0b84b; --bad: #f06c75; --ok: #55c98c; --form-width: 390px; --guide-width: 360px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: radial-gradient(circle at 70% 0%, #14284a 0, var(--bg) 42%); color: var(--text); font-family: Inter, "Segoe UI", Arial, sans-serif; }
+    button, input, select { font: inherit; }
+    .layout { min-height: 100vh; display: grid; grid-template-columns: minmax(330px, var(--form-width)) minmax(420px, 1fr) var(--guide-width); transition: grid-template-columns .25s ease; }
+    body.guide-collapsed .layout { grid-template-columns: minmax(330px, var(--form-width)) minmax(420px, 1fr) 64px; }
+    .form-sidebar, .guide-sidebar { background: rgba(17, 28, 46, .96); backdrop-filter: blur(12px); }
+    .form-sidebar { border-right: 1px solid var(--line); padding: 26px; overflow-y: auto; }
+    .guide-sidebar { border-left: 1px solid var(--line); padding: 22px; overflow-y: auto; position: relative; }
+    .main { padding: 30px; min-width: 0; }
+    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #07111f; font-weight: 900; }
+    h1, h2, h3, h4, p { margin-top: 0; }
+    h1 { font-size: 1.25rem; margin-bottom: 0; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.05rem; }
+    .muted { color: var(--muted); line-height: 1.55; }
+    code { color: #8cece4; }
+    .eyebrow { color: var(--accent); font-weight: 800; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .field.full { grid-column: 1 / -1; }
+    label { display: block; color: #dce7f6; font-size: .82rem; font-weight: 650; margin-bottom: 6px; }
+    .field-help { display: block; color: var(--muted); font-size: .72rem; margin-top: 5px; }
+    input, select { width: 100%; min-height: 42px; background: #0a1424; color: var(--text); border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; outline: 0; }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(69, 208, 195, .13); }
+    .check-row { display: flex; gap: 9px; align-items: flex-start; padding: 10px; border: 1px solid var(--line); border-radius: 9px; background: #0a1424; }
+    .check-row input { width: 18px; min-height: 18px; margin-top: 2px; }
+    .check-row label { margin: 0; }
+    .button-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 18px; }
+    .btn { border: 0; border-radius: 10px; min-height: 44px; padding: 10px 14px; cursor: pointer; font-weight: 800; }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #38b6e9); color: #06121d; }
+    .btn-secondary { background: var(--panel-soft); color: var(--text); border: 1px solid var(--line); }
+    .btn:hover { filter: brightness(1.08); }
+    .panel { background: linear-gradient(145deg, rgba(23,36,58,.96), rgba(14,25,43,.96)); border: 1px solid var(--line); border-radius: 16px; padding: 22px; margin-bottom: 18px; box-shadow: 0 18px 45px rgba(0,0,0,.16); }
+    .hero { display: flex; justify-content: space-between; gap: 24px; align-items: center; }
+    .hero-copy { max-width: 670px; }
+    .hero-icon { width: 88px; height: 88px; flex: 0 0 88px; display: grid; place-items: center; border-radius: 24px; background: linear-gradient(135deg, rgba(69,208,195,.2), rgba(92,141,255,.22)); font-size: 2rem; }
+    .status-LOWER_RISK { border-color: rgba(85,201,140,.7); }
+    .status-ELEVATED_RISK, .status-MANUAL_REVIEW { border-color: rgba(240,184,75,.75); }
+    .status-HIGH_RISK, .status-POLICY_STOP { border-color: rgba(240,108,117,.75); }
+    .status-pill { display: inline-flex; border-radius: 999px; padding: 6px 11px; background: rgba(159,176,200,.13); font-size: .76rem; font-weight: 850; letter-spacing: .04em; }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(330px, 1.2fr); gap: 18px; }
+    .probability-wrap { display: grid; place-items: center; padding: 8px; }
+    .probability-ring { --probability: 0%; width: 190px; height: 190px; border-radius: 50%; background: conic-gradient(var(--accent) var(--probability), #243650 0); display: grid; place-items: center; position: relative; }
+    .probability-ring::before { content: ""; width: 146px; height: 146px; border-radius: 50%; background: #101c2e; position: absolute; }
+    .probability-value { position: relative; text-align: center; }
+    .probability-value strong { display: block; font-size: 2.25rem; }
+    .probability-value span { color: var(--muted); font-size: .78rem; }
+    .risk-scale { margin-top: 25px; position: relative; padding-top: 15px; }
+    .risk-track { height: 14px; overflow: hidden; border-radius: 999px; display: grid; grid-template-columns: 20fr 22fr 58fr; }
+    .risk-track span:nth-child(1) { background: var(--ok); } .risk-track span:nth-child(2) { background: var(--warn); } .risk-track span:nth-child(3) { background: var(--bad); }
+    .risk-marker { position: absolute; top: 5px; left: var(--marker); width: 3px; height: 32px; background: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.22); transform: translateX(-1px); border-radius: 2px; }
+    .risk-labels { display: flex; justify-content: space-between; color: var(--muted); font-size: .7rem; margin-top: 7px; }
+    .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .metric-card { padding: 15px; background: #0d192a; border: 1px solid var(--line); border-radius: 12px; }
+    .metric-card span { display: block; color: var(--muted); font-size: .74rem; min-height: 32px; }
+    .metric-card strong { display: block; margin-top: 5px; font-size: 1.1rem; }
+    .progress { height: 8px; background: #253750; border-radius: 999px; overflow: hidden; margin-top: 10px; }
+    .progress > span { display: block; height: 100%; width: var(--width); background: linear-gradient(90deg, var(--accent), var(--warn)); border-radius: inherit; }
+    .reason-list { margin: 12px 0 0; padding-left: 20px; color: #e8edf5; }
+    .shap-row { margin: 15px 0; }
+    .shap-meta { display: flex; justify-content: space-between; gap: 10px; font-size: .78rem; margin-bottom: 6px; }
+    .shap-feature { overflow-wrap: anywhere; }
+    .shap-direction { color: var(--muted); white-space: nowrap; }
+    .shap-track { height: 10px; background: #253750; border-radius: 999px; overflow: hidden; }
+    .shap-bar { display: block; height: 100%; width: var(--width); border-radius: inherit; }
+    .shap-bar.positive { background: linear-gradient(90deg, #f0b84b, #f06c75); }
+    .shap-bar.negative { background: linear-gradient(90deg, #5c8dff, #45d0c3); }
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: .72rem; }
+    .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; }
+    .alert { background: rgba(240,108,117,.12); border: 1px solid rgba(240,108,117,.5); border-radius: 10px; padding: 12px; margin: 14px 0; }
+    .guide-toggle { position: sticky; top: 0; z-index: 2; width: 100%; margin-bottom: 16px; }
+    .guide-content { transition: opacity .18s ease; }
+    body.guide-collapsed .guide-content { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
+    body.guide-collapsed .guide-sidebar { padding: 12px 9px; }
+    body.guide-collapsed .guide-toggle .toggle-text { display: none; }
+    .guide-section { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 16px; }
+    .guide-item { margin-bottom: 14px; }
+    .guide-item strong { display: block; font-size: .82rem; margin-bottom: 3px; color: #eaf2ff; }
+    .guide-item p { color: var(--muted); font-size: .76rem; line-height: 1.45; margin: 0; }
+    .example { color: #91e9e1; }
+    .empty-state { min-height: 440px; display: grid; place-items: center; text-align: center; }
+    .empty-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 25px; }
+    .empty-step { background: #0d192a; border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+    .empty-step strong { display: block; color: var(--accent); font-size: 1.3rem; margin-bottom: 7px; }
+    @media (max-width: 1180px) {
+      .layout, body.guide-collapsed .layout { grid-template-columns: minmax(330px, 390px) 1fr; }
+      .guide-sidebar { grid-column: 1 / -1; border: 0; border-top: 1px solid var(--line); }
+      body.guide-collapsed .guide-sidebar { display: none; }
+    }
+    @media (max-width: 760px) {
+      .layout, body.guide-collapsed .layout { display: block; }
+      .form-sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+      .main { padding: 18px; }
+      .dashboard-grid, .metric-grid, .empty-steps { grid-template-columns: 1fr; }
+      .hero { align-items: flex-start; } .hero-icon { width: 58px; height: 58px; flex-basis: 58px; border-radius: 16px; }
+      .guide-sidebar { display: block; }
+    }
   </style>
 </head>
 <body>
 <div class="layout">
-  <aside class="sidebar">
-    <h1 class="h4">Credit Default Risk DSS</h1>
-    <p class="muted">Educational decision-support prototype. It estimates <code>P(Default)</code>; it does not issue a bank decision.</p>
+  <aside class="form-sidebar">
+    <div class="brand"><div class="brand-mark">CR</div><div><h1>Credit Risk DSS</h1><span class="eyebrow">Навчальний прототип</span></div></div>
+    <p class="muted">Оцініть <code>P(Default)</code> і policy-індикатори. Система не ухвалює юридично чинного кредитного рішення.</p>
     {% if errors %}
-      <div class="alert alert-danger">
-        <strong>Validation errors</strong>
-        <ul class="mb-0">
-          {% for error in errors %}<li>{{ error }}</li>{% endfor %}
-        </ul>
-      </div>
+      <div class="alert"><strong>Validation errors / Перевірте введені дані</strong><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
     {% endif %}
-    <form method="post" novalidate>
-      <label class="form-label">Loan amount</label>
-      <input class="form-control mb-3" name="loan_amnt" type="number" step="0.01" value="{{ data.loan_amnt if data else '' }}">
-      <label class="form-label">Term</label>
-      <select class="form-select mb-3" name="term">
-        <option value="36" {% if data and data.term|string == '36' %}selected{% endif %}>36 months</option>
-        <option value="60" {% if data and data.term|string == '60' %}selected{% endif %}>60 months</option>
-      </select>
-      <label class="form-label">APR for payment calculator (%)</label>
-      <input class="form-control mb-3" name="apr" type="number" step="0.01" value="{{ data.apr if data else '10' }}">
-      <label class="form-label">Annual income</label>
-      <input class="form-control mb-3" name="annual_inc" type="number" step="0.01" value="{{ data.annual_inc if data else '' }}">
-      <label class="form-label">Current DTI (%)</label>
-      <input class="form-control mb-3" name="dti" type="number" step="0.01" value="{{ data.dti if data else '' }}">
-      <label class="form-label">FICO low</label>
-      <input class="form-control mb-3" name="fico_range_low" type="number" step="1" value="{{ data.fico_range_low if data else '' }}">
-      <label class="form-label">Employment length (years)</label>
-      <input class="form-control mb-3" name="emp_length" type="number" step="0.1" value="{{ data.emp_length if data else '5' }}">
-      <label class="form-label">Home ownership</label>
-      <select class="form-select mb-3" name="home_ownership">
-        {% for option in ['RENT','OWN','MORTGAGE','OTHER'] %}
-          <option value="{{ option }}" {% if data and data.home_ownership == option %}selected{% endif %}>{{ option }}</option>
-        {% endfor %}
-      </select>
-      <label class="form-label">Purpose</label>
-      <select class="form-select mb-3" name="purpose">
-        {% for option in ['debt_consolidation','credit_card','home_improvement','major_purchase','other'] %}
-          <option value="{{ option }}" {% if data and data.purpose == option %}selected{% endif %}>{{ option }}</option>
-        {% endfor %}
-      </select>
-      <label class="form-label">Verification status</label>
-      <select class="form-select mb-3" name="verification_status">
-        {% for option in ['Verified','Source Verified','Not Verified'] %}
-          <option value="{{ option }}" {% if data and data.verification_status == option %}selected{% endif %}>{{ option }}</option>
-        {% endfor %}
-      </select>
-      <label class="form-label">Employment type for policy indicators</label>
-      <select class="form-select mb-3" name="employment_type">
-        {% for option in ['UOP_UNDEFINED','UOP_FIXED','B2B_GE_12M','B2B_LT_12M','OTHER'] %}
-          <option value="{{ option }}" {% if data and data.employment_type == option %}selected{% endif %}>{{ option }}</option>
-        {% endfor %}
-      </select>
-      <label class="form-label">Dependents</label>
-      <input class="form-control mb-3" name="num_dependents" type="number" step="1" value="{{ data.num_dependents if data else '0' }}">
-      <div class="form-check mb-3">
-        <input class="form-check-input" type="checkbox" name="residency_covers_term" value="true" {% if not data or data.residency_covers_term %}checked{% endif %}>
-        <label class="form-check-label">Right to reside covers the requested loan term</label>
+    <form method="post" novalidate id="risk-form">
+      <div class="form-grid">
+        <div class="field"><label for="loan_amnt">Сума кредиту</label><input id="loan_amnt" name="loan_amnt" type="number" min="0" step="0.01" placeholder="12000" value="{{ data.loan_amnt if data else '' }}"><small class="field-help">У валюті розрахунку</small></div>
+        <div class="field"><label for="term">Строк</label><select id="term" name="term"><option value="36" {% if data and data.term|string == '36' %}selected{% endif %}>36 місяців</option><option value="60" {% if data and data.term|string == '60' %}selected{% endif %}>60 місяців</option></select></div>
+        <div class="field"><label for="apr">APR, %</label><input id="apr" name="apr" type="number" min="0" max="100" step="0.01" placeholder="9.5" value="{{ data.apr if data else '10' }}"><small class="field-help">Для розрахунку платежу</small></div>
+        <div class="field"><label for="annual_inc">Річний дохід</label><input id="annual_inc" name="annual_inc" type="number" min="0" step="0.01" placeholder="72000" value="{{ data.annual_inc if data else '' }}"></div>
+        <div class="field"><label for="dti">Поточний DTI, %</label><input id="dti" name="dti" type="number" min="0" max="100" step="0.01" placeholder="18" value="{{ data.dti if data else '' }}"></div>
+        <div class="field"><label for="fico_range_low">FICO</label><input id="fico_range_low" name="fico_range_low" type="number" min="300" max="850" step="1" placeholder="710" value="{{ data.fico_range_low if data else '' }}"></div>
+        <div class="field"><label for="emp_length">Стаж, років</label><input id="emp_length" name="emp_length" type="number" min="0" max="50" step="0.1" placeholder="6" value="{{ data.emp_length if data else '5' }}"></div>
+        <div class="field"><label for="num_dependents">Утриманці</label><input id="num_dependents" name="num_dependents" type="number" min="0" max="20" step="1" placeholder="1" value="{{ data.num_dependents if data else '0' }}"></div>
+        <div class="field full"><label for="home_ownership">Житло</label><select id="home_ownership" name="home_ownership">{% for option in ['RENT','OWN','MORTGAGE','OTHER'] %}<option value="{{ option }}" {% if data and data.home_ownership == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
+        <div class="field full"><label for="purpose">Мета кредиту</label><select id="purpose" name="purpose">{% for option in ['debt_consolidation','credit_card','home_improvement','major_purchase','other'] %}<option value="{{ option }}" {% if data and data.purpose == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
+        <div class="field full"><label for="verification_status">Перевірка доходу</label><select id="verification_status" name="verification_status">{% for option in ['Verified','Source Verified','Not Verified'] %}<option value="{{ option }}" {% if data and data.verification_status == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
+        <div class="field full"><label for="employment_type">Тип зайнятості</label><select id="employment_type" name="employment_type">{% for option in ['UOP_UNDEFINED','UOP_FIXED','B2B_GE_12M','B2B_LT_12M','OTHER'] %}<option value="{{ option }}" {% if data and data.employment_type == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
+        <div class="field full check-row"><input id="residency_covers_term" type="checkbox" name="residency_covers_term" value="true" {% if not data or data.residency_covers_term %}checked{% endif %}><label for="residency_covers_term">Право проживання покриває весь строк кредиту</label></div>
       </div>
-      <button class="btn btn-primary w-100" type="submit">Estimate default risk</button>
+      <div class="button-row"><button class="btn btn-primary" type="submit">Розрахувати ризик</button><button class="btn btn-secondary" type="button" id="fill-example">Заповнити приклад</button></div>
     </form>
   </aside>
+
   <main class="main">
     {% if success %}
-      <section class="panel status-{{ result.decision.status }}">
-        <div class="d-flex justify-content-between align-items-start gap-3">
-          <div>
-            <h2 class="h4 mb-1">DSS recommendation: {{ result.decision.status }}</h2>
-            <p class="muted mb-0">Probability is calibrated model <code>P(Default)</code>. Policy rules are shown separately.</p>
-          </div>
-          <span class="badge bg-secondary badge-status">{{ probability_default_percent }}% P(Default)</span>
-        </div>
+      <section class="panel hero status-{{ result.decision.status }}">
+        <div class="hero-copy"><span class="eyebrow">Результат аналізу</span><h2>DSS recommendation: {{ result.decision.status }}</h2><p class="muted">Модель показує ймовірність дефолту, а policy rules окремо формують рекомендацію для перегляду людиною.</p><span class="status-pill">{{ result.decision.status }}</span></div>
+        <div class="hero-icon" aria-hidden="true">◎</div>
       </section>
-      <section class="panel">
-        <h3 class="h5">Policy Indicators</h3>
-        <div class="metric"><span>New monthly payment</span><strong>{{ result.policy.indicators.new_monthly_payment | round(2) }} PLN</strong></div>
-        <div class="metric"><span>DSTI after new loan</span><strong>{{ result.policy.indicators.dsti_after_new_loan | round(2) }}%</strong></div>
-        <div class="metric"><span>Disposable monthly income</span><strong>{{ result.policy.indicators.cash_left | round(2) }} PLN</strong></div>
-        {% if result.decision.hard_stop_reasons %}
-          <h4 class="h6 mt-3">Hard-stop/manual-review reasons</h4>
-          <ul>{% for reason in result.decision.hard_stop_reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
-        {% endif %}
-        {% if result.decision.soft_flag_reasons %}
-          <h4 class="h6 mt-3">Soft policy flags</h4>
-          <ul>{% for reason in result.decision.soft_flag_reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
-        {% endif %}
-      </section>
-      <section class="panel">
-        <h3 class="h5">ML Explanation</h3>
-        <p class="muted">{{ explanation.note }}</p>
-        {% if explanation.top_features %}
-          <div class="table-responsive">
-            <table class="table table-dark table-sm align-middle">
-              <thead><tr><th>Transformed feature</th><th>SHAP contribution to default class</th></tr></thead>
-              <tbody>
-                {% for item in explanation.top_features %}
-                  <tr><td>{{ item.feature }}</td><td>{{ item.contribution_to_default | round(5) }}</td></tr>
-                {% endfor %}
-              </tbody>
-            </table>
+      <div class="dashboard-grid">
+        <section class="panel">
+          <h3>Ймовірність дефолту</h3>
+          <div class="probability-wrap"><div class="probability-ring" style="--probability: {{ probability_default_percent }}%"><div class="probability-value"><strong>{{ probability_default_percent }}%</strong><span>P(Default)</span></div></div></div>
+          <div class="risk-scale" style="--marker: {{ probability_marker_percent }}%"><div class="risk-marker" aria-hidden="true"></div><div class="risk-track"><span></span><span></span><span></span></div><div class="risk-labels"><span>Нижчий</span><span>Підвищений</span><span>Високий</span></div></div>
+          <p class="muted" style="font-size:.76rem;margin-top:14px">Policy threshold: {{ threshold_percent }}%. Межі: {{ (risk_bands.lower_risk_max * 100)|round(0)|int }}% / {{ (risk_bands.elevated_risk_max * 100)|round(0)|int }}%.</p>
+        </section>
+        <section class="panel">
+          <h3>Фінансові індикатори</h3>
+          <div class="metric-grid">
+            <div class="metric-card"><span>Новий місячний платіж</span><strong>{{ result.policy.indicators.new_monthly_payment | round(2) }} PLN</strong></div>
+            <div class="metric-card"><span>DSTI після нового кредиту</span><strong>{{ result.policy.indicators.dsti_after_new_loan | round(2) }}%</strong><div class="progress"><span style="--width: {{ dsti_bar_percent }}%"></span></div></div>
+            <div class="metric-card"><span>Вільний дохід на місяць</span><strong>{{ result.policy.indicators.cash_left | round(2) }} PLN</strong></div>
           </div>
-        {% endif %}
+          {% if result.decision.hard_stop_reasons %}<h4>Причини зупинки / ручної перевірки</h4><ul class="reason-list">{% for reason in result.decision.hard_stop_reasons %}<li>{{ reason }}</li>{% endfor %}</ul>{% endif %}
+          {% if result.decision.soft_flag_reasons %}<h4>М’які policy-попередження</h4><ul class="reason-list">{% for reason in result.decision.soft_flag_reasons %}<li>{{ reason }}</li>{% endfor %}</ul>{% endif %}
+        </section>
+      </div>
+      <section class="panel">
+        <h3>Що вплинуло на прогноз ML</h3><p class="muted">{{ explanation.note }}</p>
+        {% if explanation_chart %}
+          <div class="legend"><span><i style="background:var(--bad)"></i>збільшує ризик</span><span><i style="background:var(--accent)"></i>зменшує ризик</span></div>
+          {% for item in explanation_chart %}<div class="shap-row"><div class="shap-meta"><span class="shap-feature">{{ item.feature }}</span><span class="shap-direction">{{ item.direction }} · {{ item.contribution_to_default | round(5) }}</span></div><div class="shap-track"><span class="shap-bar {{ 'positive' if item.contribution_to_default >= 0 else 'negative' }}" style="--width: {{ item.bar_percent }}%"></span></div></div>{% endfor %}
+        {% else %}<p class="muted">Числові SHAP contributions для цього artifact недоступні; вигадані пояснення не показуються.</p>{% endif %}
       </section>
     {% else %}
-      <section class="panel">
-        <h2 class="h4">Enter an application</h2>
-        <p class="muted mb-0">The app requires a valid trained artifact and will not display invented model scores.</p>
-      </section>
+      <section class="panel empty-state"><div><div class="hero-icon" style="margin:0 auto 20px">◎</div><span class="eyebrow">Початок роботи</span><h2>Заповніть заявку зліва</h2><p class="muted">Скористайтеся власними даними або кнопкою «Заповнити приклад». Результат з’явиться тут без перезавантаження моделі.</p><div class="empty-steps"><div class="empty-step"><strong>1</strong>Введіть параметри</div><div class="empty-step"><strong>2</strong>Запустіть оцінку</div><div class="empty-step"><strong>3</strong>Перегляньте ризик і пояснення</div></div></div></section>
     {% endif %}
   </main>
+
+  <aside class="guide-sidebar" aria-label="Довідник полів">
+    <button class="btn btn-secondary guide-toggle" type="button" id="guide-toggle" aria-expanded="true"><span aria-hidden="true">☰</span> <span class="toggle-text">Згорнути довідник</span></button>
+    <div class="guide-content">
+      <span class="eyebrow">Довідник</span><h2 style="font-size:1.2rem">Що означають поля?</h2><p class="muted" style="font-size:.78rem">Значення в дужках утворюють готовий тестовий приклад.</p>
+      <div class="guide-section">
+        <div class="guide-item"><strong>Сума кредиту</strong><p>Запитана основна сума. <span class="example">(12000)</span></p></div>
+        <div class="guide-item"><strong>Строк</strong><p>Кількість місяців повернення. <span class="example">(36)</span></p></div>
+        <div class="guide-item"><strong>APR</strong><p>Річна процентна ставка для розрахунку платежу; не є ML-ознакою. <span class="example">(9.5%)</span></p></div>
+        <div class="guide-item"><strong>Річний дохід</strong><p>Валовий дохід заявника за рік. <span class="example">(72000)</span></p></div>
+        <div class="guide-item"><strong>DTI</strong><p>Частка поточних боргових платежів у доході. <span class="example">(18%)</span></p></div>
+        <div class="guide-item"><strong>FICO</strong><p>Нижня межа кредитного бала, від 300 до 850. <span class="example">(710)</span></p></div>
+        <div class="guide-item"><strong>Стаж</strong><p>Тривалість зайнятості в роках. <span class="example">(6)</span></p></div>
+        <div class="guide-item"><strong>Утриманці</strong><p>Кількість фінансово залежних осіб. <span class="example">(1)</span></p></div>
+        <div class="guide-item"><strong>Житло</strong><p>RENT — оренда, OWN — власне, MORTGAGE — іпотека. <span class="example">(RENT)</span></p></div>
+        <div class="guide-item"><strong>Мета кредиту</strong><p>Основна мета фінансування. <span class="example">(debt_consolidation)</span></p></div>
+        <div class="guide-item"><strong>Перевірка доходу</strong><p>Статус підтвердження доходу. <span class="example">(Verified)</span></p></div>
+        <div class="guide-item"><strong>Тип зайнятості</strong><p>Використовується policy-частиною DSS. <span class="example">(UOP_FIXED)</span></p></div>
+      </div>
+      <div class="guide-section"><h3>Як читати результат</h3>
+        <div class="guide-item"><strong>P(Default)</strong><p>Оцінена моделлю ймовірність класу 1 — Charged Off / Default.</p></div>
+        <div class="guide-item"><strong>DSTI</strong><p>Частка всіх платежів, включно з новим, у місячному доході.</p></div>
+        <div class="guide-item"><strong>SHAP contribution</strong><p>Напрям і відносна сила впливу ознаки саме на ML-компонент для default class.</p></div>
+        <div class="guide-item"><strong>DSS recommendation</strong><p>Навчальна рекомендація, що поєднує ML risk band і прозорі policy rules. Це не рішення банку.</p></div>
+      </div>
+    </div>
+  </aside>
 </div>
+<script>
+  const example = {loan_amnt:"12000", term:"36", apr:"9.5", annual_inc:"72000", dti:"18", fico_range_low:"710", emp_length:"6", num_dependents:"1", home_ownership:"RENT", purpose:"debt_consolidation", verification_status:"Verified", employment_type:"UOP_FIXED"};
+  document.getElementById("fill-example").addEventListener("click", () => { Object.entries(example).forEach(([name, value]) => { document.querySelector(`[name="${name}"]`).value = value; }); document.querySelector('[name="residency_covers_term"]').checked = true; });
+  document.getElementById("guide-toggle").addEventListener("click", (event) => { document.body.classList.toggle("guide-collapsed"); const expanded = !document.body.classList.contains("guide-collapsed"); event.currentTarget.setAttribute("aria-expanded", String(expanded)); event.currentTarget.querySelector(".toggle-text").textContent = expanded ? "Згорнути довідник" : "Розгорнути довідник"; });
+</script>
 </body>
 </html>

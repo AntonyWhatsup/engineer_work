@@ -23,3 +23,7 @@ def test_explainability_smoke_and_isolated(artifact_path, valid_payload):
         for explanation in explanations
     )
     assert all(not hasattr(explanation, "path") for explanation in explanations)
+    assert explanations[0] == explanations[1]
+    if "SHAP unavailable" not in explanations[0].note:
+        assert explanations[0].base_value_default is not None
+        assert explanations[0].top_features

@@ -8,7 +8,6 @@ from sklearn.calibration import CalibratedClassifierCV, FrozenEstimator
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
 from src.config import load_policy_config
-from src.decision.hybrid import choose_threshold
 from src.training.artifact import ModelArtifact, make_metadata, save_artifact
 from src.training.data import prepare_lendingclub_frame, split_train_validation_test
 from src.training.metrics import evaluate_predictions, write_results
@@ -36,11 +35,12 @@ def train_from_csv(data_path: Path, output_dir: Path, seed: int = 42) -> ModelAr
 
     selected_name = "random_forest"
     selected_pipeline = fitted_candidates[selected_name]
-    calibrator = CalibratedClassifierCV(FrozenEstimator(selected_pipeline), method="sigmoid")
+    calibrator = CalibratedClassifierCV(FrozenEstimator(selected_pipeline), method="sigmoid", cv=3)
     calibrator.fit(x_val, y_val)
 
     val_probability_default = calibrator.predict_proba(x_val)[:, 1]
-    threshold = choose_threshold(y_val.tolist(), val_probability_default.tolist(), min_recall_default=0.70)
+    policy = load_policy_config()
+    threshold = float(policy["decision_threshold"])
     test_probability_default = calibrator.predict_proba(x_test)[:, 1]
 
     metrics = {
@@ -48,7 +48,6 @@ def train_from_csv(data_path: Path, output_dir: Path, seed: int = 42) -> ModelAr
         "validation": evaluate_predictions(y_val, val_probability_default, threshold),
         "test": evaluate_predictions(y_test, test_probability_default, threshold),
     }
-    policy = load_policy_config()
     metadata = make_metadata(metrics, threshold, policy["version"], seed, selected_name)
     artifact = ModelArtifact(pipeline=calibrator, metadata=metadata)
     output_dir.mkdir(parents=True, exist_ok=True)

@@ -53,14 +53,32 @@ def prepare_lendingclub_frame(raw: pd.DataFrame) -> pd.DataFrame:
 
 def split_train_validation_test(data: pd.DataFrame, seed: int = 42) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     if "issue_d" in data.columns:
-        ordered = data.sort_values("issue_d")
+        parsed_dates = pd.to_datetime(data["issue_d"], format="mixed", errors="coerce", utc=True)
+        if parsed_dates.isna().any():
+            raise ValueError("issue_d contains missing or unparseable dates.")
+        ordered = data.assign(issue_d=parsed_dates).sort_values("issue_d")
     else:
         ordered = data.sample(frac=1.0, random_state=seed)
     n = len(ordered)
     if n < 30:
         # Tiny fixtures need all classes in each split more than time fidelity.
         shuffled = data.sample(frac=1.0, random_state=seed)
-        return shuffled.iloc[: int(n * 0.6)], shuffled.iloc[int(n * 0.6) : int(n * 0.8)], shuffled.iloc[int(n * 0.8) :]
+        splits = (
+            shuffled.iloc[: int(n * 0.6)],
+            shuffled.iloc[int(n * 0.6) : int(n * 0.8)],
+            shuffled.iloc[int(n * 0.8) :],
+        )
+        _validate_split_classes(splits)
+        return splits
     train_end = int(n * 0.6)
     val_end = int(n * 0.8)
-    return ordered.iloc[:train_end], ordered.iloc[train_end:val_end], ordered.iloc[val_end:]
+    splits = ordered.iloc[:train_end], ordered.iloc[train_end:val_end], ordered.iloc[val_end:]
+    _validate_split_classes(splits)
+    return splits
+
+
+def _validate_split_classes(splits: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]) -> None:
+    for name, split in zip(("train", "validation", "test"), splits, strict=True):
+        classes = set(split["target"].dropna().astype(int).unique())
+        if classes != {0, 1}:
+            raise ValueError(f"{name} split must contain both target classes 0 and 1; found {sorted(classes)}.")

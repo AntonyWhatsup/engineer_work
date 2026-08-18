@@ -18,6 +18,8 @@ from sklearn.metrics import (
 
 
 def evaluate_predictions(y_true, probability_default, threshold: float) -> dict:
+    if set(pd.Series(y_true).dropna().astype(int).unique()) != {0, 1}:
+        raise ValueError("Evaluation requires both target classes 0 and 1.")
     y_pred = [1 if p >= threshold else 0 for p in probability_default]
     cm = confusion_matrix(y_true, y_pred, labels=[0, 1]).tolist()
     return {
@@ -32,6 +34,8 @@ def evaluate_predictions(y_true, probability_default, threshold: float) -> dict:
 
 
 def write_results(output_dir: Path, metrics_by_split: dict, y_true, probability_default) -> None:
+    if set(pd.Series(y_true).dropna().astype(int).unique()) != {0, 1}:
+        raise ValueError("Calibration output requires both target classes 0 and 1.")
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "metrics.json").write_text(json.dumps(metrics_by_split, indent=2), encoding="utf-8")
     prob_true, prob_pred = calibration_curve(y_true, probability_default, n_bins=5, strategy="uniform")
