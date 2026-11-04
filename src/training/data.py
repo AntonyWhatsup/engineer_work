@@ -39,8 +39,13 @@ def prepare_lendingclub_frame(raw: pd.DataFrame) -> pd.DataFrame:
     term_text = data["term"].astype(str).str.extract(r"(\d+)")[0]
     data["term"] = term_text.astype(float).astype("Int64")
     if "emp_length" in data.columns:
-        emp = data["emp_length"].astype(str).str.extract(r"(\d+)")[0].fillna("0")
-        data["emp_length"] = emp.astype(float)
+        emp_raw = data["emp_length"]
+        emp_str = emp_raw.astype(str)
+        mask_lt_1 = emp_str.str.contains(r"<\s*1", regex=True) & emp_raw.notna()
+        emp_num = emp_str.str.extract(r"(\d+)")[0].astype(float)
+        emp_num = emp_num.where(~mask_lt_1, 0.0)
+        emp_num = emp_num.where(emp_raw.notna() & ~emp_raw.isin(["n/a", "nan", "None"]), float("nan"))
+        data["emp_length"] = emp_num
     required = DEFAULT_SCHEMA.raw_features + ["target"]
     missing = [column for column in required if column not in data.columns]
     if missing:

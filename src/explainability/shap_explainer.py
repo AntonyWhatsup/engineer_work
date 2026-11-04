@@ -19,8 +19,13 @@ class Explanation:
     note: str
 
 
-def explain_default_prediction(artifact, application: ValidatedApplication, top_n: int = 8) -> Explanation:
-    frame = application.to_model_frame(DEFAULT_SCHEMA)
+def explain_default_prediction(
+    artifact,
+    application: ValidatedApplication,
+    top_n: int = 8,
+    fx_pln_per_usd: float | None = None,
+) -> Explanation:
+    frame = application.to_model_frame(DEFAULT_SCHEMA, fx_pln_per_usd=fx_pln_per_usd)
     pipeline = artifact.pipeline
     # CalibratedClassifierCV exposes calibrated_classifiers_; explain the fitted base estimator when possible.
     fitted = getattr(pipeline, "calibrated_classifiers_", None)

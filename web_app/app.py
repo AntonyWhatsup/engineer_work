@@ -87,7 +87,8 @@ def create_app(
             return render_template("index.html", success=False, data=raw_payload, errors=errors), 400
 
         result = service.predict(application)
-        explanation = explain_default_prediction(service.artifact, application)
+        fx = float(service.policy_config.get("fx_pln_per_usd", 1.0))
+        explanation = explain_default_prediction(service.artifact, application, fx_pln_per_usd=fx)
         probability_default_percent = round(result.probability_default * 100, 1)
         return render_template(
             "index.html",

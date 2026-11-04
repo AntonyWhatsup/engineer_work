@@ -1,57 +1,82 @@
 version: "2026.08-demo"
 artifact_version: "1.0"
+# decision_threshold wyznaczany ze zbioru walidacyjnego w train.py na podstawie min_recall_default (np. 0.70).
+# elevated_risk_max musi byc identyczny z decision_threshold, rozdzielajac ryzyko podwyzszone od wysokiego.
 decision_threshold: 0.42
+# lower_risk_max wyznaczany jest jako kwantyl (np. 20. percentyl) kalibrowanych prawdopodobienstw na zbiorze walidacyjnym,
+# co odpowiada bezpiecznemu przedzialowi niskiego ryzyka (LOWER_RISK).
 risk_bands:
   lower_risk_max: 0.20
   elevated_risk_max: 0.42
+# Parametr polityki decyzyjnej: minimalny recall dla klasy pozytywnej (default) przy doborze progu operacyjnego
+min_recall_default: 0.70
+# Zalozenie demonstracyjne przelicznika walutowego: dochod i kwota kredytu w PLN sa przeliczane na USD dla modelu
+fx_pln_per_usd: 4.00
+# Parametryzacja minimalnego dochodu rozporzadzalnego (minimum socjalne) w PLN
+min_disposable_income_base: 2000.0
+min_disposable_income_per_dependent: 500.0
 messages:
-  disclaimer: "Навчальний DSS показує рекомендацію ризику, але не є офіційним рішенням банку."
+  disclaimer: "Prototyp edukacyjny DSS przedstawia rekomendacje ryzyka, lecz nie stanowi oficjalnej decyzji kredytowej banku."
 rules:
   - id: "DSTI_SOFT_50"
     name: "DSTI soft indicator"
-    description: "Демонстраційний поріг кредитної політики для навчального прототипу."
+    description: "Demonstracyjny prog polityki kredytowej dla prototypu edukacyjnego."
     type: "soft_flag"
     field: "dsti_after_new_loan"
     operator: ">"
     threshold: 50
     unit: "percent"
-    reason: "DSTI після запитаного кредиту перевищує 50%."
-    source: "Демонстраційне припущення прототипу; не регуляторна вимога."
+    reason: "Wskaznik DSTI po uwzglednieniu wnioskowanego kredytu przekracza 50%."
+    source: "Zalozenie demonstracyjne prototypu; brak wymogu prawnego."
     version: "2026.08-demo"
-    user_message: "DSTI після нового кредиту перевищує демонстраційний поріг 50%."
+    user_message: "Wskaznik DSTI po nowym kredycie przekracza demonstracyjny prog 50%."
   - id: "DSTI_HARD_65"
     name: "DSTI policy stop"
-    description: "Демонстраційний поріг кредитної політики для навчального прототипу."
+    description: "Demonstracyjny prog blokujacy polityki kredytowej dla prototypu edukacyjnego."
     type: "hard_stop"
     field: "dsti_after_new_loan"
     operator: ">"
     threshold: 65
     unit: "percent"
-    reason: "DSTI після запитаного кредиту перевищує 65%."
-    source: "Демонстраційне припущення прототипу; не регуляторна вимога."
+    reason: "Wskaznik DSTI po wnioskowanym kredycie przekracza dopuszczalny prog 65%."
+    source: "Zalozenie demonstracyjne prototypu; brak wymogu prawnego."
     version: "2026.08-demo"
-    user_message: "DSTI після нового кредиту перевищує демонстраційний поріг 65%."
+    user_message: "Wskaznik DSTI po nowym kredycie przekracza demonstracyjny prog blokujacy 65%."
   - id: "RESIDENCY_TERM_REVIEW"
     name: "Right-to-reside manual review"
-    description: "Ручна перевірка, якщо право проживання не покриває весь строк кредиту."
+    description: "Weryfikacja manualna, gdy prawo pobytu nie obejmuje pelnego okresu kredytowania."
     type: "hard_stop"
     field: "residency_covers_term"
     operator: "=="
     threshold: false
     unit: "boolean"
-    reason: "Право проживання може не покривати повний строк кредиту."
-    source: "Демонстраційне припущення прототипу."
+    reason: "Prawo pobytu moze nie obejmowac pelnego okresu splaty wnioskowanego kredytu."
+    source: "Zalozenie demonstracyjne prototypu zgodne z polityka weryfikacji rezydentow."
     version: "2026.08-demo"
-    user_message: "Потрібна ручна перевірка права проживання на весь строк кредиту."
+    user_message: "Wymagana weryfikacja manualna prawa pobytu wnioskodawcy na caly okres kredytowania."
   - id: "DISPOSABLE_INCOME_REVIEW"
     name: "Disposable income manual review"
-    description: "Ручна перевірка, якщо вільний місячний дохід нижчий за демонстраційний мінімум."
+    description: "Weryfikacja manualna, gdy dochod rozporzadzalny nie pokrywa minimum bazowego powiekszonego o liczbe osob na utrzymaniu."
     type: "hard_stop"
-    field: "cash_left"
+    field: "disposable_income_deficit"
     operator: "<"
-    threshold: 2000
+    threshold: 0.0
     unit: "PLN"
-    reason: "Вільний місячний дохід нижчий за демонстраційний мінімум."
-    source: "Демонстраційне припущення прототипу."
+    reason: "Wolny dochod po splacie zobowiazan jest nizszy niz wymagane minimum socjalne z uwzglednieniem osob na utrzymaniu."
+    source: "Zalozenie demonstracyjne prototypu (minimum socjalne powiekszane na kazdego czlonka rodziny)."
     version: "2026.08-demo"
-    user_message: "Вільний дохід після зобов’язань потребує ручної перевірки."
+    user_message: "Dochod rozporzadzalny po splacie zobowiazan jest nizszy niz wymagane minimum z uwzglednieniem osob na utrzymaniu."
+  - id: "EMPLOYMENT_TYPE_REVIEW"
+    name: "Employment type manual review"
+    description: "Miekka flaga weryfikacji manualnej dla niestabilnych form zatrudnienia (krotki staz B2B lub inne)."
+    type: "soft_flag"
+    field: "employment_type"
+    operator: "in"
+    threshold:
+      - "B2B_LT_12M"
+      - "OTHER"
+    unit: "category"
+    reason: "Forma zatrudnienia (B2B ponizej 12 miesiecy lub inna) wymaga dodatkowej oceny stabilnosci dochodu."
+    source: "Zalozenie demonstracyjne prototypu dotyczace ryzyka formy zatrudnienia."
+    version: "2026.08-demo"
+    user_message: "Forma zatrudnienia wnioskodawcy (B2B ponizej 12 mies. lub inna) wymaga manualnej weryfikacji stabilnosci dochodu."

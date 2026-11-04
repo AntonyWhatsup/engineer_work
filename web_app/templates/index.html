@@ -114,6 +114,9 @@
   <aside class="form-sidebar">
     <div class="brand"><div class="brand-mark">CR</div><div><h1>Credit Risk DSS</h1><span class="eyebrow">Навчальний прототип</span></div></div>
     <p class="muted">Оцініть <code>P(Default)</code> і policy-індикатори. Система не ухвалює юридично чинного кредитного рішення.</p>
+    <div style="background: rgba(92, 141, 255, 0.12); border: 1px solid rgba(92, 141, 255, 0.4); border-radius: 9px; padding: 10px; margin-bottom: 14px; font-size: 0.74rem; line-height: 1.45; color: #dce7f6;">
+      <strong>Ograniczenia modelu:</strong> Model ML został wytrenowany na amerykańskim zbiorze danych LendingClub (dane z rynku USA, wyłącznie wnioski zaakceptowane). Kwoty dochodu i kredytu w PLN są przeliczane na USD według przyjętego kursu demonstracyjnego.
+    </div>
     {% if errors %}
       <div class="alert"><strong>Validation errors / Перевірте введені дані</strong><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
     {% endif %}
@@ -124,7 +127,7 @@
         <div class="field"><label for="apr">APR, %</label><input id="apr" name="apr" type="number" min="0" max="100" step="0.01" placeholder="9.5" value="{{ data.apr if data else '10' }}"><small class="field-help">Для розрахунку платежу</small></div>
         <div class="field"><label for="annual_inc">Річний дохід</label><input id="annual_inc" name="annual_inc" type="number" min="0" step="0.01" placeholder="72000" value="{{ data.annual_inc if data else '' }}"></div>
         <div class="field"><label for="dti">Поточний DTI, %</label><input id="dti" name="dti" type="number" min="0" max="100" step="0.01" placeholder="18" value="{{ data.dti if data else '' }}"></div>
-        <div class="field"><label for="fico_range_low">FICO</label><input id="fico_range_low" name="fico_range_low" type="number" min="300" max="850" step="1" placeholder="710" value="{{ data.fico_range_low if data else '' }}"></div>
+        <div class="field"><label for="fico_range_low">FICO — ocena scoringowa w skali FICO (300-850)</label><input id="fico_range_low" name="fico_range_low" type="number" min="300" max="850" step="1" placeholder="710" value="{{ data.fico_range_low if data else '' }}"><small class="field-help">ocena scoringowa w skali FICO (300-850)</small></div>
         <div class="field"><label for="emp_length">Стаж, років</label><input id="emp_length" name="emp_length" type="number" min="0" max="50" step="0.1" placeholder="6" value="{{ data.emp_length if data else '5' }}"></div>
         <div class="field"><label for="num_dependents">Утриманці</label><input id="num_dependents" name="num_dependents" type="number" min="0" max="20" step="1" placeholder="1" value="{{ data.num_dependents if data else '0' }}"></div>
         <div class="field full"><label for="home_ownership">Житло</label><select id="home_ownership" name="home_ownership">{% for option in ['RENT','OWN','MORTGAGE','OTHER'] %}<option value="{{ option }}" {% if data and data.home_ownership == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
@@ -183,7 +186,7 @@
         <div class="guide-item"><strong>APR</strong><p>Річна процентна ставка для розрахунку платежу; не є ML-ознакою. <span class="example">(9.5%)</span></p></div>
         <div class="guide-item"><strong>Річний дохід</strong><p>Валовий дохід заявника за рік. <span class="example">(72000)</span></p></div>
         <div class="guide-item"><strong>DTI</strong><p>Частка поточних боргових платежів у доході. <span class="example">(18%)</span></p></div>
-        <div class="guide-item"><strong>FICO</strong><p>Нижня межа кредитного бала, від 300 до 850. <span class="example">(710)</span></p></div>
+        <div class="guide-item"><strong>FICO</strong><p>ocena scoringowa w skali FICO (300-850), dolna granica przedziału punktowego. <span class="example">(710)</span></p></div>
         <div class="guide-item"><strong>Стаж</strong><p>Тривалість зайнятості в роках. <span class="example">(6)</span></p></div>
         <div class="guide-item"><strong>Утриманці</strong><p>Кількість фінансово залежних осіб. <span class="example">(1)</span></p></div>
         <div class="guide-item"><strong>Житло</strong><p>RENT — оренда, OWN — власне, MORTGAGE — іпотека. <span class="example">(RENT)</span></p></div>
