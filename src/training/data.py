@@ -43,6 +43,7 @@ def prepare_lendingclub_frame(raw: pd.DataFrame) -> pd.DataFrame:
         emp_str = emp_raw.astype(str)
         mask_lt_1 = emp_str.str.contains(r"<\s*1", regex=True) & emp_raw.notna()
         emp_num = emp_str.str.extract(r"(\d+)")[0].astype(float)
+        # Map "< 1 year" to 0 (no experience). Keep NaN as NaN for imputer handling.
         emp_num = emp_num.where(~mask_lt_1, 0.0)
         emp_num = emp_num.where(emp_raw.notna() & ~emp_raw.isin(["n/a", "nan", "None"]), float("nan"))
         data["emp_length"] = emp_num

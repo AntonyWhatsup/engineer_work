@@ -2,12 +2,12 @@ version: "2026.08-demo"
 artifact_version: "1.0"
 # decision_threshold wyznaczany ze zbioru walidacyjnego w train.py na podstawie min_recall_default (np. 0.70).
 # elevated_risk_max musi byc identyczny z decision_threshold, rozdzielajac ryzyko podwyzszone od wysokiego.
-decision_threshold: 0.42
+decision_threshold: 0.20649389626490597
 # lower_risk_max wyznaczany jest jako kwantyl (np. 20. percentyl) kalibrowanych prawdopodobienstw na zbiorze walidacyjnym,
 # co odpowiada bezpiecznemu przedzialowi niskiego ryzyka (LOWER_RISK).
 risk_bands:
-  lower_risk_max: 0.20
-  elevated_risk_max: 0.42
+  lower_risk_max: 0.12
+  elevated_risk_max: 0.20649389626490597
 # Parametr polityki decyzyjnej: minimalny recall dla klasy pozytywnej (default) przy doborze progu operacyjnego
 min_recall_default: 0.70
 # Zalozenie demonstracyjne przelicznika walutowego: dochod i kwota kredytu w PLN sa przeliczane na USD dla modelu
