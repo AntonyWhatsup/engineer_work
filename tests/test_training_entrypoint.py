@@ -37,7 +37,16 @@ def test_official_training_cli_entrypoint_smoke(tmp_path, monkeypatch):
     main()
 
     model_path = output / "model.joblib"
-    artifact = load_artifact(model_path, load_policy_config())
+    policy = load_policy_config()
+    metadata_path = artifact_metadata_path(model_path)
+    assert metadata_path.is_file()
+    import json
+
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    policy["decision_threshold"] = metadata["decision_threshold"]
+    policy["risk_bands"]["elevated_risk_max"] = metadata["decision_threshold"]
+    artifact = load_artifact(model_path, policy)
     assert artifact.pipeline.classes_.tolist() == [0, 1]
-    assert artifact_metadata_path(model_path).is_file()
     assert (output / "metrics.json").is_file()
+    assert (output / "reports" / "model_comparison.csv").is_file()
+    assert metadata.get("selection_rationale") is not None

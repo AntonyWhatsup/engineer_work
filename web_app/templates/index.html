@@ -19,8 +19,13 @@
     .form-sidebar { border-right: 1px solid var(--line); padding: 26px; overflow-y: auto; }
     .guide-sidebar { border-left: 1px solid var(--line); padding: 22px; overflow-y: auto; position: relative; }
     .main { padding: 30px; min-width: 0; }
-    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
     .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #07111f; font-weight: 900; }
+    .lang-badge { display: inline-flex; align-items: center; background: #0a1424; border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
+    .lang-btn { background: transparent; border: 0; color: var(--muted); font-size: .72rem; font-weight: 750; letter-spacing: .04em; padding: 4px 10px; border-radius: 999px; cursor: pointer; transition: all .18s ease; }
+    .lang-btn:hover { color: var(--text); }
+    .lang-btn.active { background: linear-gradient(135deg, var(--accent), #38b6e9); color: #06121d; font-weight: 850; box-shadow: 0 2px 8px rgba(69,208,195,.28); }
     h1, h2, h3, h4, p { margin-top: 0; }
     h1 { font-size: 1.25rem; margin-bottom: 0; }
     h2 { font-size: 1.5rem; }
@@ -112,98 +117,609 @@
 <body>
 <div class="layout">
   <aside class="form-sidebar">
-    <div class="brand"><div class="brand-mark">CR</div><div><h1>Credit Risk DSS</h1><span class="eyebrow">Навчальний прототип</span></div></div>
-    <p class="muted">Оцініть <code>P(Default)</code> і policy-індикатори. Система не ухвалює юридично чинного кредитного рішення.</p>
+    <div class="brand-row">
+      <div class="brand">
+        <div class="brand-mark">CR</div>
+        <div>
+          <h1>Credit Risk DSS</h1>
+          <span class="eyebrow" data-i18n="appSubtitle">Навчальний прототип</span>
+        </div>
+      </div>
+      <div class="lang-badge" role="group" aria-label="Мова / Language">
+        <button type="button" class="lang-btn active" data-lang="uk" title="Українська">UA</button>
+        <button type="button" class="lang-btn" data-lang="pl" title="Polski">PL</button>
+        <button type="button" class="lang-btn" data-lang="en" title="English">EN</button>
+      </div>
+    </div>
+    <p class="muted" data-i18n="appMuted">Оцініть <code>P(Default)</code> і policy-індикатори. Система не ухвалює юридично чинного кредитного рішення.</p>
+    <div style="background: rgba(92, 141, 255, 0.12); border: 1px solid rgba(92, 141, 255, 0.4); border-radius: 9px; padding: 10px; margin-bottom: 14px; font-size: 0.74rem; line-height: 1.45; color: #dce7f6;">
+      <strong data-i18n="modelLimitTitle">Обмеження моделі:</strong> <span data-i18n="modelLimitText">Модель ML навчена на американському датасеті LendingClub (ринкові дані США, виключно схвалені заявки). Суми доходу та кредиту в PLN конвертуються в USD за прийнятим демонстраційним курсом.</span>
+    </div>
     {% if errors %}
-      <div class="alert"><strong>Validation errors / Перевірте введені дані</strong><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
+      <div class="alert"><strong data-i18n="valErrors">Validation errors / Перевірте введені дані</strong><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
     {% endif %}
     <form method="post" novalidate id="risk-form">
       <div class="form-grid">
-        <div class="field"><label for="loan_amnt">Сума кредиту</label><input id="loan_amnt" name="loan_amnt" type="number" min="0" step="0.01" placeholder="12000" value="{{ data.loan_amnt if data else '' }}"><small class="field-help">У валюті розрахунку</small></div>
-        <div class="field"><label for="term">Строк</label><select id="term" name="term"><option value="36" {% if data and data.term|string == '36' %}selected{% endif %}>36 місяців</option><option value="60" {% if data and data.term|string == '60' %}selected{% endif %}>60 місяців</option></select></div>
-        <div class="field"><label for="apr">APR, %</label><input id="apr" name="apr" type="number" min="0" max="100" step="0.01" placeholder="9.5" value="{{ data.apr if data else '10' }}"><small class="field-help">Для розрахунку платежу</small></div>
-        <div class="field"><label for="annual_inc">Річний дохід</label><input id="annual_inc" name="annual_inc" type="number" min="0" step="0.01" placeholder="72000" value="{{ data.annual_inc if data else '' }}"></div>
-        <div class="field"><label for="dti">Поточний DTI, %</label><input id="dti" name="dti" type="number" min="0" max="100" step="0.01" placeholder="18" value="{{ data.dti if data else '' }}"></div>
-        <div class="field"><label for="fico_range_low">FICO</label><input id="fico_range_low" name="fico_range_low" type="number" min="300" max="850" step="1" placeholder="710" value="{{ data.fico_range_low if data else '' }}"></div>
-        <div class="field"><label for="emp_length">Стаж, років</label><input id="emp_length" name="emp_length" type="number" min="0" max="50" step="0.1" placeholder="6" value="{{ data.emp_length if data else '5' }}"></div>
-        <div class="field"><label for="num_dependents">Утриманці</label><input id="num_dependents" name="num_dependents" type="number" min="0" max="20" step="1" placeholder="1" value="{{ data.num_dependents if data else '0' }}"></div>
-        <div class="field full"><label for="home_ownership">Житло</label><select id="home_ownership" name="home_ownership">{% for option in ['RENT','OWN','MORTGAGE','OTHER'] %}<option value="{{ option }}" {% if data and data.home_ownership == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
-        <div class="field full"><label for="purpose">Мета кредиту</label><select id="purpose" name="purpose">{% for option in ['debt_consolidation','credit_card','home_improvement','major_purchase','other'] %}<option value="{{ option }}" {% if data and data.purpose == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
-        <div class="field full"><label for="verification_status">Перевірка доходу</label><select id="verification_status" name="verification_status">{% for option in ['Verified','Source Verified','Not Verified'] %}<option value="{{ option }}" {% if data and data.verification_status == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
-        <div class="field full"><label for="employment_type">Тип зайнятості</label><select id="employment_type" name="employment_type">{% for option in ['UOP_UNDEFINED','UOP_FIXED','B2B_GE_12M','B2B_LT_12M','OTHER'] %}<option value="{{ option }}" {% if data and data.employment_type == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
-        <div class="field full check-row"><input id="residency_covers_term" type="checkbox" name="residency_covers_term" value="true" {% if not data or data.residency_covers_term %}checked{% endif %}><label for="residency_covers_term">Право проживання покриває весь строк кредиту</label></div>
+        <div class="field">
+          <label for="loan_amnt" data-i18n="lblLoanAmnt">Сума кредиту</label>
+          <input id="loan_amnt" name="loan_amnt" type="number" min="0" step="0.01" placeholder="12000" value="{{ data.loan_amnt if data else '' }}">
+          <small class="field-help" data-i18n="helpLoanAmnt">У валюті розрахунку (PLN)</small>
+        </div>
+        <div class="field">
+          <label for="term" data-i18n="lblTerm">Строк кредиту</label>
+          <select id="term" name="term">
+            <option value="36" data-i18n="optTerm36" {% if data and data.term|string == '36' %}selected{% endif %}>36 місяців (3 роки)</option>
+            <option value="60" data-i18n="optTerm60" {% if data and data.term|string == '60' %}selected{% endif %}>60 місяців (5 років)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="apr" data-i18n="lblApr">Ставка APR, %</label>
+          <input id="apr" name="apr" type="number" min="0" max="100" step="0.01" placeholder="9.5" value="{{ data.apr if data else '10' }}">
+          <small class="field-help" data-i18n="helpApr">Для розрахунку ануїтетного платежу</small>
+        </div>
+        <div class="field">
+          <label for="annual_inc" data-i18n="lblAnnualInc">Річний дохід</label>
+          <input id="annual_inc" name="annual_inc" type="number" min="0" step="0.01" placeholder="72000" value="{{ data.annual_inc if data else '' }}">
+          <small class="field-help" data-i18n="helpAnnualInc">Валовий річний дохід заявника</small>
+        </div>
+        <div class="field">
+          <label for="dti" data-i18n="lblDti">Поточний DTI, %</label>
+          <input id="dti" name="dti" type="number" min="0" max="100" step="0.01" placeholder="18" value="{{ data.dti if data else '' }}">
+          <small class="field-help" data-i18n="helpDti">Частка поточних боргових виплат</small>
+        </div>
+        <div class="field">
+          <label for="fico_range_low" data-i18n="lblFico">Кредитний рейтинг FICO (300–850)</label>
+          <input id="fico_range_low" name="fico_range_low" type="number" min="300" max="850" step="1" placeholder="710" value="{{ data.fico_range_low if data else '' }}">
+          <small class="field-help" data-i18n="helpFico">Нижня межа діапазону балів FICO</small>
+        </div>
+        <div class="field">
+          <label for="emp_length" data-i18n="lblEmpLength">Стаж роботи, років</label>
+          <input id="emp_length" name="emp_length" type="number" min="0" max="50" step="0.1" placeholder="6" value="{{ data.emp_length if data else '5' }}">
+        </div>
+        <div class="field">
+          <label for="num_dependents" data-i18n="lblDependents">Кількість утриманців</label>
+          <input id="num_dependents" name="num_dependents" type="number" min="0" max="20" step="1" placeholder="1" value="{{ data.num_dependents if data else '0' }}">
+        </div>
+        <div class="field full">
+          <label for="home_ownership" data-i18n="lblHomeOwnership">Житловий статус</label>
+          <select id="home_ownership" name="home_ownership">
+            <option value="RENT" data-i18n="optRent" {% if data and data.home_ownership == 'RENT' %}selected{% endif %}>Оренда житла (RENT)</option>
+            <option value="OWN" data-i18n="optOwn" {% if data and data.home_ownership == 'OWN' %}selected{% endif %}>Власне житло (OWN)</option>
+            <option value="MORTGAGE" data-i18n="optMortgage" {% if data and data.home_ownership == 'MORTGAGE' %}selected{% endif %}>Іпотека (MORTGAGE)</option>
+            <option value="OTHER" data-i18n="optOtherHome" {% if data and data.home_ownership == 'OTHER' %}selected{% endif %}>Інше (OTHER)</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="purpose" data-i18n="lblPurpose">Мета кредиту</label>
+          <select id="purpose" name="purpose">
+            <option value="debt_consolidation" data-i18n="optDebtCons" {% if data and data.purpose == 'debt_consolidation' %}selected{% endif %}>Консолідація заборгованості</option>
+            <option value="credit_card" data-i18n="optCreditCard" {% if data and data.purpose == 'credit_card' %}selected{% endif %}>Погашення кредитної картки</option>
+            <option value="home_improvement" data-i18n="optHomeImpr" {% if data and data.purpose == 'home_improvement' %}selected{% endif %}>Ремонт та облаштування житла</option>
+            <option value="major_purchase" data-i18n="optMajorPurch" {% if data and data.purpose == 'major_purchase' %}selected{% endif %}>Велика покупка</option>
+            <option value="other" data-i18n="optOtherPurp" {% if data and data.purpose == 'other' %}selected{% endif %}>Інша споживча мета</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="verification_status" data-i18n="lblVerification">Підтвердження доходу</label>
+          <select id="verification_status" name="verification_status">
+            <option value="Verified" data-i18n="optVerified" {% if data and data.verification_status == 'Verified' %}selected{% endif %}>Дохід підтверджено</option>
+            <option value="Source Verified" data-i18n="optSourceVerified" {% if data and data.verification_status == 'Source Verified' %}selected{% endif %}>Підтверджено документально</option>
+            <option value="Not Verified" data-i18n="optNotVerified" {% if data and data.verification_status == 'Not Verified' %}selected{% endif %}>Без документального підтвердження</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="employment_type" data-i18n="lblEmployment">Тип зайнятості / контракт</label>
+          <select id="employment_type" name="employment_type">
+            <option value="UOP_UNDEFINED" data-i18n="optUopUndef" {% if data and data.employment_type == 'UOP_UNDEFINED' %}selected{% endif %}>Трудовий договір (безстроковий)</option>
+            <option value="UOP_FIXED" data-i18n="optUopFixed" {% if data and data.employment_type == 'UOP_FIXED' %}selected{% endif %}>Трудовий договір (строковий)</option>
+            <option value="B2B_GE_12M" data-i18n="optB2bGe12" {% if data and data.employment_type == 'B2B_GE_12M' %}selected{% endif %}>Контракт B2B (понад 12 міс.)</option>
+            <option value="B2B_LT_12M" data-i18n="optB2bLt12" {% if data and data.employment_type == 'B2B_LT_12M' %}selected{% endif %}>Контракт B2B (до 12 міс.)</option>
+            <option value="OTHER" data-i18n="optOtherEmp" {% if data and data.employment_type == 'OTHER' %}selected{% endif %}>Інша зайнятість / фриланс</option>
+          </select>
+        </div>
+        <div class="field full check-row">
+          <input id="residency_covers_term" type="checkbox" name="residency_covers_term" value="true" {% if not data or data.residency_covers_term %}checked{% endif %}>
+          <label for="residency_covers_term" data-i18n="lblResidency">Право проживання покриває весь строк кредиту</label>
+        </div>
       </div>
-      <div class="button-row"><button class="btn btn-primary" type="submit">Розрахувати ризик</button><button class="btn btn-secondary" type="button" id="fill-example">Заповнити приклад</button></div>
+      <div class="button-row">
+        <button class="btn btn-primary" type="submit" data-i18n="btnSubmit">Розрахувати ризик</button>
+        <button class="btn btn-secondary" type="button" id="fill-example" data-i18n="btnExample">Заповнити приклад</button>
+      </div>
     </form>
   </aside>
 
   <main class="main">
     {% if success %}
       <section class="panel hero status-{{ result.decision.status }}">
-        <div class="hero-copy"><span class="eyebrow">Результат аналізу</span><h2>DSS recommendation: {{ result.decision.status }}</h2><p class="muted">Модель показує ймовірність дефолту, а policy rules окремо формують рекомендацію для перегляду людиною.</p><span class="status-pill">{{ result.decision.status }}</span></div>
+        <div class="hero-copy">
+          <span class="eyebrow" data-i18n="heroEyebrow">Результат аналізу</span>
+          <h2>DSS recommendation: <span class="dss-status-text">{{ result.decision.status }}</span></h2>
+          <p class="muted" data-i18n="heroDesc">Модель показує ймовірність дефолту, а policy rules окремо формують рекомендацію для перегляду людиною.</p>
+          <span class="status-pill">{{ result.decision.status }}</span>
+        </div>
         <div class="hero-icon" aria-hidden="true">◎</div>
       </section>
       <div class="dashboard-grid">
         <section class="panel">
-          <h3>Ймовірність дефолту</h3>
+          <h3 data-i18n="probHeading">Ймовірність дефолту</h3>
           <div class="probability-wrap"><div class="probability-ring" style="--probability: {{ probability_default_percent }}%"><div class="probability-value"><strong>{{ probability_default_percent }}%</strong><span>P(Default)</span></div></div></div>
-          <div class="risk-scale" style="--marker: {{ probability_marker_percent }}%"><div class="risk-marker" aria-hidden="true"></div><div class="risk-track"><span></span><span></span><span></span></div><div class="risk-labels"><span>Нижчий</span><span>Підвищений</span><span>Високий</span></div></div>
-          <p class="muted" style="font-size:.76rem;margin-top:14px">Policy threshold: {{ threshold_percent }}%. Межі: {{ (risk_bands.lower_risk_max * 100)|round(0)|int }}% / {{ (risk_bands.elevated_risk_max * 100)|round(0)|int }}%.</p>
+          <div class="risk-scale" style="--marker: {{ probability_marker_percent }}%"><div class="risk-marker" aria-hidden="true"></div><div class="risk-track"><span></span><span></span><span></span></div><div class="risk-labels"><span data-i18n="riskLower">Нижчий</span><span data-i18n="riskElevated">Підвищений</span><span data-i18n="riskHigh">Високий</span></div></div>
+          <p class="muted" style="font-size:.76rem;margin-top:14px"><span data-i18n="policyThresholdNote">Policy threshold</span>: {{ threshold_percent }}%. <span data-i18n="policyThresholdBands">Межі:</span> {{ (risk_bands.lower_risk_max * 100)|round(0)|int }}% / {{ (risk_bands.elevated_risk_max * 100)|round(0)|int }}%.</p>
         </section>
         <section class="panel">
-          <h3>Фінансові індикатори</h3>
+          <h3 data-i18n="finHeading">Фінансові індикатори</h3>
           <div class="metric-grid">
-            <div class="metric-card"><span>Новий місячний платіж</span><strong>{{ result.policy.indicators.new_monthly_payment | round(2) }} PLN</strong></div>
-            <div class="metric-card"><span>DSTI після нового кредиту</span><strong>{{ result.policy.indicators.dsti_after_new_loan | round(2) }}%</strong><div class="progress"><span style="--width: {{ dsti_bar_percent }}%"></span></div></div>
-            <div class="metric-card"><span>Вільний дохід на місяць</span><strong>{{ result.policy.indicators.cash_left | round(2) }} PLN</strong></div>
+            <div class="metric-card"><span data-i18n="cardPayment">Новий місячний платіж</span><strong>{{ result.policy.indicators.new_monthly_payment | round(2) }} PLN</strong></div>
+            <div class="metric-card"><span data-i18n="cardDsti">DSTI після нового кредиту</span><strong>{{ result.policy.indicators.dsti_after_new_loan | round(2) }}%</strong><div class="progress"><span style="--width: {{ dsti_bar_percent }}%"></span></div></div>
+            <div class="metric-card"><span data-i18n="cardCash">Вільний дохід на місяць</span><strong>{{ result.policy.indicators.cash_left | round(2) }} PLN</strong></div>
           </div>
-          {% if result.decision.hard_stop_reasons %}<h4>Причини зупинки / ручної перевірки</h4><ul class="reason-list">{% for reason in result.decision.hard_stop_reasons %}<li>{{ reason }}</li>{% endfor %}</ul>{% endif %}
-          {% if result.decision.soft_flag_reasons %}<h4>М’які policy-попередження</h4><ul class="reason-list">{% for reason in result.decision.soft_flag_reasons %}<li>{{ reason }}</li>{% endfor %}</ul>{% endif %}
+          {% if result.decision.hard_stop_reasons %}
+            <h4 data-i18n="hardStops">Причини зупинки / ручної перевірки</h4>
+            <ul class="reason-list">{% for reason in result.decision.hard_stop_reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+          {% endif %}
+          {% if result.decision.soft_flag_reasons %}
+            <h4 data-i18n="softFlags">М’які policy-попередження</h4>
+            <ul class="reason-list">{% for reason in result.decision.soft_flag_reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+          {% endif %}
         </section>
       </div>
       <section class="panel">
-        <h3>Що вплинуло на прогноз ML</h3><p class="muted">{{ explanation.note }}</p>
+        <h3 data-i18n="shapHeading">Що вплинуло на прогноз ML</h3>
+        <p class="muted">{{ explanation.note }}</p>
         {% if explanation_chart %}
-          <div class="legend"><span><i style="background:var(--bad)"></i>збільшує ризик</span><span><i style="background:var(--accent)"></i>зменшує ризик</span></div>
+          <div class="legend"><span><i style="background:var(--bad)"></i><span data-i18n="shapInc">збільшує ризик</span></span><span><i style="background:var(--accent)"></i><span data-i18n="shapDec">зменшує ризик</span></span></div>
           {% for item in explanation_chart %}<div class="shap-row"><div class="shap-meta"><span class="shap-feature">{{ item.feature }}</span><span class="shap-direction">{{ item.direction }} · {{ item.contribution_to_default | round(5) }}</span></div><div class="shap-track"><span class="shap-bar {{ 'positive' if item.contribution_to_default >= 0 else 'negative' }}" style="--width: {{ item.bar_percent }}%"></span></div></div>{% endfor %}
-        {% else %}<p class="muted">Числові SHAP contributions для цього artifact недоступні; вигадані пояснення не показуються.</p>{% endif %}
+        {% else %}
+          <p class="muted" data-i18n="shapUnavailable">Числові SHAP contributions для цього artifact недоступні; вигадані пояснення не показуються.</p>
+        {% endif %}
       </section>
     {% else %}
-      <section class="panel empty-state"><div><div class="hero-icon" style="margin:0 auto 20px">◎</div><span class="eyebrow">Початок роботи</span><h2>Заповніть заявку зліва</h2><p class="muted">Скористайтеся власними даними або кнопкою «Заповнити приклад». Результат з’явиться тут без перезавантаження моделі.</p><div class="empty-steps"><div class="empty-step"><strong>1</strong>Введіть параметри</div><div class="empty-step"><strong>2</strong>Запустіть оцінку</div><div class="empty-step"><strong>3</strong>Перегляньте ризик і пояснення</div></div></div></section>
+      <section class="panel empty-state">
+        <div>
+          <div class="hero-icon" style="margin:0 auto 20px">◎</div>
+          <span class="eyebrow" data-i18n="emptyEyebrow">Початок роботи</span>
+          <h2 data-i18n="emptyTitle">Заповніть заявку зліва</h2>
+          <p class="muted" data-i18n="emptyDesc">Скористайтеся власними даними або кнопкою «Заповнити приклад». Результат з’явиться тут без перезавантаження моделі.</p>
+          <div class="empty-steps">
+            <div class="empty-step"><strong>1</strong><span data-i18n="emptyStep1">Введіть параметри</span></div>
+            <div class="empty-step"><strong>2</strong><span data-i18n="emptyStep2">Запустіть оцінку</span></div>
+            <div class="empty-step"><strong>3</strong><span data-i18n="emptyStep3">Перегляньте ризик і пояснення</span></div>
+          </div>
+        </div>
+      </section>
     {% endif %}
   </main>
 
   <aside class="guide-sidebar" aria-label="Довідник полів">
-    <button class="btn btn-secondary guide-toggle" type="button" id="guide-toggle" aria-expanded="true"><span aria-hidden="true">☰</span> <span class="toggle-text">Згорнути довідник</span></button>
+    <button class="btn btn-secondary guide-toggle" type="button" id="guide-toggle" aria-expanded="true">
+      <span aria-hidden="true">☰</span> <span class="toggle-text" data-i18n="guideCollapse">Згорнути довідник</span>
+    </button>
     <div class="guide-content">
-      <span class="eyebrow">Довідник</span><h2 style="font-size:1.2rem">Що означають поля?</h2><p class="muted" style="font-size:.78rem">Значення в дужках утворюють готовий тестовий приклад.</p>
+      <span class="eyebrow" data-i18n="guideEyebrow">Довідник</span>
+      <h2 style="font-size:1.2rem" data-i18n="guideTitle">Що означають поля?</h2>
+      <p class="muted" style="font-size:.78rem" data-i18n="guideSubtitle">Значення в дужках утворюють готовий тестовий приклад.</p>
       <div class="guide-section">
-        <div class="guide-item"><strong>Сума кредиту</strong><p>Запитана основна сума. <span class="example">(12000)</span></p></div>
-        <div class="guide-item"><strong>Строк</strong><p>Кількість місяців повернення. <span class="example">(36)</span></p></div>
-        <div class="guide-item"><strong>APR</strong><p>Річна процентна ставка для розрахунку платежу; не є ML-ознакою. <span class="example">(9.5%)</span></p></div>
-        <div class="guide-item"><strong>Річний дохід</strong><p>Валовий дохід заявника за рік. <span class="example">(72000)</span></p></div>
-        <div class="guide-item"><strong>DTI</strong><p>Частка поточних боргових платежів у доході. <span class="example">(18%)</span></p></div>
-        <div class="guide-item"><strong>FICO</strong><p>Нижня межа кредитного бала, від 300 до 850. <span class="example">(710)</span></p></div>
-        <div class="guide-item"><strong>Стаж</strong><p>Тривалість зайнятості в роках. <span class="example">(6)</span></p></div>
-        <div class="guide-item"><strong>Утриманці</strong><p>Кількість фінансово залежних осіб. <span class="example">(1)</span></p></div>
-        <div class="guide-item"><strong>Житло</strong><p>RENT — оренда, OWN — власне, MORTGAGE — іпотека. <span class="example">(RENT)</span></p></div>
-        <div class="guide-item"><strong>Мета кредиту</strong><p>Основна мета фінансування. <span class="example">(debt_consolidation)</span></p></div>
-        <div class="guide-item"><strong>Перевірка доходу</strong><p>Статус підтвердження доходу. <span class="example">(Verified)</span></p></div>
-        <div class="guide-item"><strong>Тип зайнятості</strong><p>Використовується policy-частиною DSS. <span class="example">(UOP_FIXED)</span></p></div>
+        <div class="guide-item"><strong data-i18n="gLoanAmntTitle">Сума кредиту</strong><p><span data-i18n="gLoanAmntDesc">Запитана основна сума кредиту.</span> <span class="example">(12000)</span></p></div>
+        <div class="guide-item"><strong data-i18n="gTermTitle">Строк кредиту</strong><p><span data-i18n="gTermDesc">Кількість місяців повернення (36 або 60).</span> <span class="example">(36)</span></p></div>
+        <div class="guide-item"><strong data-i18n="gAprTitle">Ставка APR</strong><p><span data-i18n="gAprDesc">Річна процентна ставка для розрахунку платежу; не є ML-ознакою.</span> <span class="example">(9.5%)</span></p></div>
+        <div class="guide-item"><strong data-i18n="gAnnualIncTitle">Річний дохід</strong><p><span data-i18n="gAnnualIncDesc">Валовий річний дохід заявника до сплати податків.</span> <span class="example">(72000)</span></p></div>
+        <div class="guide-item"><strong data-i18n="gDtiTitle">DTI (Debt-to-Income)</strong><p><span data-i18n="gDtiDesc">Частка поточних боргових виплат у щомісячному доході.</span> <span class="example">(18%)</span></p></div>
+        <div class="guide-item"><strong data-i18n="gFicoTitle">Рейтинг FICO</strong><p><span data-i18n="gFicoDesc">Оцінка кредитоспроможності позичальника за шкалою FICO (300–850).</span> <span class="example">(710)</span></p></div>
+        <div class="guide-item"><strong data-i18n="gEmpLengthTitle">Стаж роботи</strong><p><span data-i18n="gEmpLengthDesc">Тривалість трудового стажу на поточному місці в роках.</span> <span class="example">(6)</span></p></div>
+        <div class="guide-item"><strong data-i18n="gDependentsTitle">Кількість утриманців</strong><p><span data-i18n="gDependentsDesc">Кількість фінансово залежних осіб (впливає на прожитковий мінімум).</span> <span class="example">(1)</span></p></div>
+        <div class="guide-item"><strong data-i18n="gHousingTitle">Житловий статус</strong><p><span data-i18n="gHousingDesc">RENT — оренда, OWN — власне житло, MORTGAGE — іпотека.</span> <span class="example">(RENT)</span></p></div>
+        <div class="guide-item"><strong data-i18n="gPurposeTitle">Мета кредиту</strong><p><span data-i18n="gPurposeDesc">Цільове призначення кредиту (консолідація, картка, ремонт тощо).</span> <span class="example">(debt_consolidation)</span></p></div>
+        <div class="guide-item"><strong data-i18n="gVerificationTitle">Підтвердження доходу</strong><p><span data-i18n="gVerificationDesc">Статус документальної верифікації доходів.</span> <span class="example">(Verified)</span></p></div>
+        <div class="guide-item"><strong data-i18n="gEmploymentTitle">Тип зайнятості</strong><p><span data-i18n="gEmploymentDesc">Форма зайнятості для бізнес-правил (безстроковий договір, B2B тощо).</span> <span class="example">(UOP_FIXED)</span></p></div>
       </div>
-      <div class="guide-section"><h3>Як читати результат</h3>
-        <div class="guide-item"><strong>P(Default)</strong><p>Оцінена моделлю ймовірність класу 1 — Charged Off / Default.</p></div>
-        <div class="guide-item"><strong>DSTI</strong><p>Частка всіх платежів, включно з новим, у місячному доході.</p></div>
-        <div class="guide-item"><strong>SHAP contribution</strong><p>Напрям і відносна сила впливу ознаки саме на ML-компонент для default class.</p></div>
-        <div class="guide-item"><strong>DSS recommendation</strong><p>Навчальна рекомендація, що поєднує ML risk band і прозорі policy rules. Це не рішення банку.</p></div>
+      <div class="guide-section"><h3 data-i18n="gSectionResultsTitle">Як читати результат</h3>
+        <div class="guide-item"><strong>P(Default)</strong><p data-i18n="gPDefaultDesc">Оцінена моделлю ML ймовірність дефолту (клас 1 — Charged Off / Default).</p></div>
+        <div class="guide-item"><strong>DSTI</strong><p data-i18n="gDstiDesc">Частка всіх платежів, включно з новим кредитом, у місячному доході.</p></div>
+        <div class="guide-item"><strong>SHAP contribution</strong><p data-i18n="gShapDesc">Напрям і сила впливу кожної ознаки саме на ML-оцінку ймовірності дефолту.</p></div>
+        <div class="guide-item"><strong>DSS recommendation</strong><p data-i18n="gDssRecDesc">Навчальна рекомендація, що поєднує ML risk band і прозорі policy rules. Це не рішення банку.</p></div>
       </div>
     </div>
   </aside>
 </div>
+
 <script>
-  const example = {loan_amnt:"12000", term:"36", apr:"9.5", annual_inc:"72000", dti:"18", fico_range_low:"710", emp_length:"6", num_dependents:"1", home_ownership:"RENT", purpose:"debt_consolidation", verification_status:"Verified", employment_type:"UOP_FIXED"};
-  document.getElementById("fill-example").addEventListener("click", () => { Object.entries(example).forEach(([name, value]) => { document.querySelector(`[name="${name}"]`).value = value; }); document.querySelector('[name="residency_covers_term"]').checked = true; });
-  document.getElementById("guide-toggle").addEventListener("click", (event) => { document.body.classList.toggle("guide-collapsed"); const expanded = !document.body.classList.contains("guide-collapsed"); event.currentTarget.setAttribute("aria-expanded", String(expanded)); event.currentTarget.querySelector(".toggle-text").textContent = expanded ? "Згорнути довідник" : "Розгорнути довідник"; });
+  const translations = {
+    uk: {
+      appSubtitle: "Навчальний прототип",
+      appMuted: "Оцініть <code>P(Default)</code> і policy-індикатори. Система не ухвалює юридично чинного кредитного рішення.",
+      modelLimitTitle: "Обмеження моделі:",
+      modelLimitText: "Модель ML навчена на американському датасеті LendingClub (ринкові дані США, виключно схвалені заявки). Суми доходу та кредиту в PLN конвертуються в USD за прийнятим демонстраційним курсом.",
+      valErrors: "Validation errors / Перевірте введені дані",
+      lblLoanAmnt: "Сума кредиту",
+      helpLoanAmnt: "У валюті розрахунку (PLN)",
+      lblTerm: "Строк кредиту",
+      lblApr: "Ставка APR, %",
+      helpApr: "Для розрахунку ануїтетного платежу",
+      lblAnnualInc: "Річний дохід",
+      helpAnnualInc: "Валовий річний дохід заявника",
+      lblDti: "Поточний DTI, %",
+      helpDti: "Частка поточних боргових виплат",
+      lblFico: "Кредитний рейтинг FICO (300–850)",
+      helpFico: "Нижня межа діапазону балів FICO",
+      lblEmpLength: "Стаж роботи, років",
+      lblDependents: "Кількість утриманців",
+      lblHomeOwnership: "Житловий статус",
+      lblPurpose: "Мета кредиту",
+      lblVerification: "Підтвердження доходу",
+      lblEmployment: "Тип зайнятості / контракт",
+      lblResidency: "Право проживання покриває весь строк кредиту",
+      btnSubmit: "Розрахувати ризик",
+      btnExample: "Заповнити приклад",
+      optTerm36: "36 місяців (3 роки)",
+      optTerm60: "60 місяців (5 років)",
+      optRent: "Оренда житла (RENT)",
+      optOwn: "Власне житло (OWN)",
+      optMortgage: "Іпотека (MORTGAGE)",
+      optOtherHome: "Інше (OTHER)",
+      optDebtCons: "Консолідація заборгованості",
+      optCreditCard: "Погашення кредитної картки",
+      optHomeImpr: "Ремонт та облаштування житла",
+      optMajorPurch: "Велика покупка",
+      optOtherPurp: "Інша споживча мета",
+      optVerified: "Дохід підтверджено",
+      optSourceVerified: "Підтверджено документально",
+      optNotVerified: "Без документального підтвердження",
+      optUopUndef: "Трудовий договір (безстроковий)",
+      optUopFixed: "Трудовий договір (строковий)",
+      optB2bGe12: "Контракт B2B (понад 12 міс.)",
+      optB2bLt12: "Контракт B2B (до 12 міс.)",
+      optOtherEmp: "Інша зайнятість / фриланс",
+      heroEyebrow: "Результат аналізу",
+      heroDesc: "Модель показує ймовірність дефолту, а policy rules окремо формують рекомендацію для перегляду людиною.",
+      probHeading: "Ймовірність дефолту",
+      riskLower: "Нижчий",
+      riskElevated: "Підвищений",
+      riskHigh: "Високий",
+      policyThresholdNote: "Policy threshold",
+      policyThresholdBands: "Межі:",
+      finHeading: "Фінансові індикатори",
+      cardPayment: "Новий місячний платіж",
+      cardDsti: "DSTI після нового кредиту",
+      cardCash: "Вільний дохід на місяць",
+      hardStops: "Причини зупинки / ручної перевірки",
+      softFlags: "М’які policy-попередження",
+      shapHeading: "Що вплинуло на прогноз ML",
+      shapInc: "збільшує ризик",
+      shapDec: "зменшує ризик",
+      shapUnavailable: "Числові SHAP contributions для цього artifact недоступні; вигадані пояснення не показуються.",
+      emptyEyebrow: "Початок роботи",
+      emptyTitle: "Заповніть заявку зліва",
+      emptyDesc: "Скористайтеся власними даними або кнопкою «Заповнити приклад». Результат з’явиться тут без перезавантаження моделі.",
+      emptyStep1: "Введіть параметри",
+      emptyStep2: "Запустіть оцінку",
+      emptyStep3: "Перегляньте ризик і пояснення",
+      guideCollapse: "Згорнути довідник",
+      guideExpand: "Розгорнути довідник",
+      guideEyebrow: "Довідник",
+      guideTitle: "Що означають поля?",
+      guideSubtitle: "Значення в дужках утворюють готовий тестовий приклад.",
+      gLoanAmntTitle: "Сума кредиту",
+      gLoanAmntDesc: "Запитана основна сума кредиту.",
+      gTermTitle: "Строк кредиту",
+      gTermDesc: "Кількість місяців повернення (36 або 60).",
+      gAprTitle: "Ставка APR",
+      gAprDesc: "Річна процентна ставка для розрахунку платежу; не є ML-ознакою.",
+      gAnnualIncTitle: "Річний дохід",
+      gAnnualIncDesc: "Валовий річний дохід заявника до сплати податків.",
+      gDtiTitle: "DTI (Debt-to-Income)",
+      gDtiDesc: "Частка поточних боргових виплат у щомісячному доході.",
+      gFicoTitle: "Рейтинг FICO",
+      gFicoDesc: "Оцінка кредитоспроможності позичальника за шкалою FICO (300–850).",
+      gEmpLengthTitle: "Стаж роботи",
+      gEmpLengthDesc: "Тривалість трудового стажу на поточному місці в роках.",
+      gDependentsTitle: "Кількість утриманців",
+      gDependentsDesc: "Кількість фінансово залежних осіб (впливає на прожитковий мінімум).",
+      gHousingTitle: "Житловий статус",
+      gHousingDesc: "RENT — оренда, OWN — власне житло, MORTGAGE — іпотека.",
+      gPurposeTitle: "Мета кредиту",
+      gPurposeDesc: "Цільове призначення кредиту (консолідація, картка, ремонт тощо).",
+      gVerificationTitle: "Підтвердження доходу",
+      gVerificationDesc: "Статус документальної верифікації доходів.",
+      gEmploymentTitle: "Тип зайнятості",
+      gEmploymentDesc: "Форма зайнятості для бізнес-правил (безстроковий договір, B2B тощо).",
+      gSectionResultsTitle: "Як читати результат",
+      gPDefaultDesc: "Оцінена моделлю ML ймовірність дефолту (клас 1 — Charged Off / Default).",
+      gDstiDesc: "Частка всіх платежів, включно з новим кредитом, у місячному доході.",
+      gShapDesc: "Напрям і сила впливу кожної ознаки саме на ML-оцінку ймовірності дефолту.",
+      gDssRecDesc: "Навчальна рекомендація, що поєднує ML risk band і прозорі policy rules. Це не рішення банку."
+    },
+    pl: {
+      appSubtitle: "Prototyp edukacyjny",
+      appMuted: "Oceń <code>P(Default)</code> oraz wskaźniki decyzyjne. System nie podejmuje wiążącej prawnie decyzji kredytowej.",
+      modelLimitTitle: "Ograniczenia modelu:",
+      modelLimitText: "Model ML został wytrenowany na amerykańskim zbiorze danych LendingClub (dane z rynku USA, wyłącznie wnioski zaakceptowane). Kwoty dochodu i kredytu w PLN są przeliczane na USD według przyjętego kursu demonstracyjnego.",
+      valErrors: "Validation errors / Błędy walidacji danych",
+      lblLoanAmnt: "Kwota kredytu",
+      helpLoanAmnt: "W walucie rozliczeniowej (PLN)",
+      lblTerm: "Okres spłaty",
+      lblApr: "Stopa APR, %",
+      helpApr: "Do obliczenia raty annuitetowej",
+      lblAnnualInc: "Dochód roczny",
+      helpAnnualInc: "Roczny dochód brutto wnioskodawcy",
+      lblDti: "Aktualny DTI, %",
+      helpDti: "Udział aktualnych zobowiązań w dochodzie",
+      lblFico: "Ocena FICO (300–850)",
+      helpFico: "Dolna granica punktacji FICO (300–850)",
+      lblEmpLength: "Staż pracy, lata",
+      lblDependents: "Osoby na utrzymaniu",
+      lblHomeOwnership: "Status mieszkaniowy",
+      lblPurpose: "Cel kredytu",
+      lblVerification: "Weryfikacja dochodu",
+      lblEmployment: "Forma zatrudnienia / umowa",
+      lblResidency: "Prawo stałego pobytu obejmuje cały okres kredytowania",
+      btnSubmit: "Oblicz ryzyko",
+      btnExample: "Wypełnij przykład",
+      optTerm36: "36 miesięcy (3 lata)",
+      optTerm60: "60 miesięcy (5 lat)",
+      optRent: "Wynajem mieszkania (RENT)",
+      optOwn: "Własność (OWN)",
+      optMortgage: "Kredyt hipoteczny (MORTGAGE)",
+      optOtherHome: "Inny status (OTHER)",
+      optDebtCons: "Konsolidacja zadłużenia",
+      optCreditCard: "Spłata karty kredytowej",
+      optHomeImpr: "Remont i wyposażenie domu",
+      optMajorPurch: "Duży zakup konsumpcyjny",
+      optOtherPurp: "Inny cel pożyczki",
+      optVerified: "Dochód zweryfikowany",
+      optSourceVerified: "Zweryfikowany źródłowo",
+      optNotVerified: "Brak weryfikacji",
+      optUopUndef: "Umowa o pracę (czas nieokreślony)",
+      optUopFixed: "Umowa o pracę (czas określony)",
+      optB2bGe12: "Kontrakt B2B (powyżej 12 mies.)",
+      optB2bLt12: "Kontrakt B2B (poniżej 12 mies.)",
+      optOtherEmp: "Inna forma / umowa cywilnoprawna",
+      heroEyebrow: "Wynik analizy",
+      heroDesc: "Model szacuje prawdopodobieństwo niewypłacalności, a reguły decyzyjne formułują rekomendację do weryfikacji eksperckiej.",
+      probHeading: "Prawdopodobieństwo defaultu",
+      riskLower: "Niższe",
+      riskElevated: "Podwyższone",
+      riskHigh: "Wysokie",
+      policyThresholdNote: "Próg decyzyjny",
+      policyThresholdBands: "Przedziały:",
+      finHeading: "Wskaźniki finansowe",
+      cardPayment: "Nowa rata miesięczna",
+      cardDsti: "DSTI po nowym kredycie",
+      cardCash: "Dochód rozporządzalny miesięcznie",
+      hardStops: "Powody blokady / weryfikacji manualnej",
+      softFlags: "Ostrzeżenia polityki kredytowej (soft flags)",
+      shapHeading: "Wpływ cech na predykcję ML (SHAP)",
+      shapInc: "zwiększa ryzyko",
+      shapDec: "zmniejsza ryzyko",
+      shapUnavailable: "Liczbowe wartości SHAP dla tego artefaktu są niedostępne; sztuczne objaśnienia nie są wyświetlane.",
+      emptyEyebrow: "Rozpoczęcie pracy",
+      emptyTitle: "Wypełnij wniosek po lewej",
+      emptyDesc: "Wprowadź własne parametry lub użyj przycisku «Wypełnij przykład». Wynik pojawi się tutaj bez ponownego ładowania modelu.",
+      emptyStep1: "Wprowadź parametry",
+      emptyStep2: "Uruchom ocenę",
+      emptyStep3: "Przeanalizuj ryzyko i objaśnienie",
+      guideCollapse: "Zwiń przewodnik",
+      guideExpand: "Rozwiń przewodnik",
+      guideEyebrow: "Przewodnik",
+      guideTitle: "Co oznaczają pola?",
+      guideSubtitle: "Wartości w nawiasach tworzą gotowy przykład testowy.",
+      gLoanAmntTitle: "Kwota kredytu",
+      gLoanAmntDesc: "Wnioskowana kwota główna kredytu.",
+      gTermTitle: "Okres spłaty",
+      gTermDesc: "Liczba miesięcy spłaty pożyczki (36 lub 60).",
+      gAprTitle: "Stopa APR",
+      gAprDesc: "Roczna stopa oprocentowania do obliczenia raty; nie jest cechą modelu ML.",
+      gAnnualIncTitle: "Dochód roczny",
+      gAnnualIncDesc: "Roczny dochód brutto wnioskodawcy przed opodatkowaniem.",
+      gDtiTitle: "DTI (Debt-to-Income)",
+      gDtiDesc: "Wskaźnik obciążenia dochodu ratami istniejących zobowiązań.",
+      gFicoTitle: "Ocena FICO",
+      gFicoDesc: "Podstawowa ocena scoringowa wiarygodności kredytowej w skali FICO (300–850).",
+      gEmpLengthTitle: "Staż pracy",
+      gEmpLengthDesc: "Staż pracy u obecnego pracodawcy w latach.",
+      gDependentsTitle: "Osoby na utrzymaniu",
+      gDependentsDesc: "Liczba osób na utrzymaniu wnioskodawcy (wpływa na minimum socjalne).",
+      gHousingTitle: "Status mieszkaniowy",
+      gHousingDesc: "RENT — wynajem, OWN — własność, MORTGAGE — kredyt hipoteczny.",
+      gPurposeTitle: "Cel kredytu",
+      gPurposeDesc: "Główny cel finansowania (konsolidacja, karta kredytowa, remont itp.).",
+      gVerificationTitle: "Weryfikacja dochodu",
+      gVerificationDesc: "Stopień zweryfikowania deklarowanych dochodów przez instytucję.",
+      gEmploymentTitle: "Forma zatrudnienia",
+      gEmploymentDesc: "Forma prawna zatrudnienia wykorzystywana w regułach polityki (UOP, B2B).",
+      gSectionResultsTitle: "Jak interpretować wyniki",
+      gPDefaultDesc: "Oszacowane przez model ML prawdopodobieństwo niewypłacalności (klasa 1).",
+      gDstiDesc: "Wskaźnik obsługi długu: relacja sumy wszystkich rat (w tym nowej) do dochodu.",
+      gShapDesc: "Kierunek i siła wpływu danej cechy na predykcję ryzyka w ujęciu addytywnym.",
+      gDssRecDesc: "Rekomendacja łącząca ocenę ryzyka modelu ML z twardymi i miękkimi regułami bankowymi."
+    },
+    en: {
+      appSubtitle: "Educational Prototype",
+      appMuted: "Evaluate <code>P(Default)</code> and policy indicators. The system does not make legally binding credit decisions.",
+      modelLimitTitle: "Model Limitations:",
+      modelLimitText: "The ML model was trained on the US LendingClub dataset (US market data, accepted loans only). Income and loan amounts in PLN are converted to USD at the demo exchange rate.",
+      valErrors: "Validation errors / Please check the input data",
+      lblLoanAmnt: "Loan Amount",
+      helpLoanAmnt: "In calculation currency (PLN)",
+      lblTerm: "Loan Term",
+      lblApr: "APR Rate, %",
+      helpApr: "Used for annuity payment calculation",
+      lblAnnualInc: "Annual Income",
+      helpAnnualInc: "Gross annual borrower income",
+      lblDti: "Current DTI, %",
+      helpDti: "Share of current debt payments in income",
+      lblFico: "FICO Score (300–850)",
+      helpFico: "Lower bound of FICO score range",
+      lblEmpLength: "Employment Length, years",
+      lblDependents: "Number of Dependents",
+      lblHomeOwnership: "Home Ownership",
+      lblPurpose: "Loan Purpose",
+      lblVerification: "Income Verification",
+      lblEmployment: "Employment Type / Contract",
+      lblResidency: "Right of residence covers the entire loan term",
+      btnSubmit: "Calculate Risk",
+      btnExample: "Fill Example",
+      optTerm36: "36 months (3 years)",
+      optTerm60: "60 months (5 years)",
+      optRent: "Rent (RENT)",
+      optOwn: "Own (OWN)",
+      optMortgage: "Mortgage (MORTGAGE)",
+      optOtherHome: "Other (OTHER)",
+      optDebtCons: "Debt consolidation",
+      optCreditCard: "Credit card repayment",
+      optHomeImpr: "Home improvement",
+      optMajorPurch: "Major purchase",
+      optOtherPurp: "Other purpose",
+      optVerified: "Income verified",
+      optSourceVerified: "Source verified",
+      optNotVerified: "Not verified",
+      optUopUndef: "Permanent employment contract (UOP)",
+      optUopFixed: "Fixed-term employment contract",
+      optB2bGe12: "B2B contract (≥ 12 months)",
+      optB2bLt12: "B2B contract (< 12 months)",
+      optOtherEmp: "Other employment / freelance",
+      heroEyebrow: "Analysis Result",
+      heroDesc: "The model estimates default probability, while policy rules independently provide a recommendation for human review.",
+      probHeading: "Default Probability",
+      riskLower: "Lower",
+      riskElevated: "Elevated",
+      riskHigh: "High",
+      policyThresholdNote: "Policy threshold",
+      policyThresholdBands: "Bands:",
+      finHeading: "Financial Indicators",
+      cardPayment: "New Monthly Payment",
+      cardDsti: "DSTI After New Loan",
+      cardCash: "Monthly Disposable Income",
+      hardStops: "Reasons for Stop / Manual Review",
+      softFlags: "Soft Policy Warnings",
+      shapHeading: "What Influenced the ML Prediction",
+      shapInc: "increases risk",
+      shapDec: "reduces risk",
+      shapUnavailable: "Numerical SHAP contributions are unavailable for this artifact; fabricated explanations are not displayed.",
+      emptyEyebrow: "Getting Started",
+      emptyTitle: "Fill out the application on the left",
+      emptyDesc: "Enter your own parameters or click «Fill Example». The result will appear here without reloading the model.",
+      emptyStep1: "Enter parameters",
+      emptyStep2: "Run evaluation",
+      emptyStep3: "Review risk and explanations",
+      guideCollapse: "Collapse guide",
+      guideExpand: "Expand guide",
+      guideEyebrow: "Guide",
+      guideTitle: "What do the fields mean?",
+      guideSubtitle: "Values in parentheses form a ready test example.",
+      gLoanAmntTitle: "Loan Amount",
+      gLoanAmntDesc: "Requested principal loan amount.",
+      gTermTitle: "Loan Term",
+      gTermDesc: "Number of repayment months (36 or 60).",
+      gAprTitle: "APR Rate",
+      gAprDesc: "Annual percentage rate for payment calculation; not an ML feature.",
+      gAnnualIncTitle: "Annual Income",
+      gAnnualIncDesc: "Gross annual borrower income before taxes.",
+      gDtiTitle: "DTI (Debt-to-Income)",
+      gDtiDesc: "Current debt payments as a share of gross monthly income.",
+      gFicoTitle: "FICO Score",
+      gFicoDesc: "Standard creditworthiness score on the US FICO scale (300–850).",
+      gEmpLengthTitle: "Employment Length",
+      gEmpLengthDesc: "Duration of employment at current job in years.",
+      gDependentsTitle: "Dependents",
+      gDependentsDesc: "Number of financially dependent persons (affects minimum disposable income).",
+      gHousingTitle: "Housing Status",
+      gHousingDesc: "RENT — rental housing, OWN — owned property, MORTGAGE — mortgaged property.",
+      gPurposeTitle: "Loan Purpose",
+      gPurposeDesc: "Primary stated purpose of financing (consolidation, credit card, renovation, etc.).",
+      gVerificationTitle: "Income Verification",
+      gVerificationDesc: "Status of documentary income verification by the lender.",
+      gEmploymentTitle: "Employment Type",
+      gEmploymentDesc: "Contractual employment arrangement used in policy rules.",
+      gSectionResultsTitle: "How to read results",
+      gPDefaultDesc: "ML model's calibrated probability of default (class 1 — Charged Off / Default).",
+      gDstiDesc: "Debt Service-to-Income: total monthly obligations including new loan over monthly income.",
+      gShapDesc: "Direction and relative strength of each feature's contribution to default probability.",
+      gDssRecDesc: "Educational recommendation combining ML risk band with transparent policy rules."
+    }
+  };
+
+  function applyLanguage(lang) {
+    const dict = translations[lang] || translations.uk;
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+      const key = el.getAttribute("data-i18n");
+      if (dict[key] !== undefined) {
+        if (dict[key].includes("<")) {
+          el.innerHTML = dict[key];
+        } else {
+          el.textContent = dict[key];
+        }
+      }
+    });
+
+    // Update active state on language buttons
+    document.querySelectorAll(".lang-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.getAttribute("data-lang") === lang);
+    });
+
+    // Update toggle guide button text according to collapse state
+    const guideToggle = document.getElementById("guide-toggle");
+    if (guideToggle) {
+      const isExpanded = !document.body.classList.contains("guide-collapsed");
+      const toggleText = guideToggle.querySelector(".toggle-text");
+      if (toggleText) {
+        toggleText.textContent = isExpanded ? dict.guideCollapse : dict.guideExpand;
+      }
+    }
+    document.documentElement.lang = lang;
+    localStorage.setItem("dss_lang", lang);
+  }
+
+  // Setup language button listeners
+  document.querySelectorAll(".lang-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      applyLanguage(btn.getAttribute("data-lang"));
+    });
+  });
+
+  // Example filler
+  const example = {
+    loan_amnt: "12000",
+    term: "36",
+    apr: "9.5",
+    annual_inc: "72000",
+    dti: "18",
+    fico_range_low: "710",
+    emp_length: "6",
+    num_dependents: "1",
+    home_ownership: "RENT",
+    purpose: "debt_consolidation",
+    verification_status: "Verified",
+    employment_type: "UOP_FIXED"
+  };
+  document.getElementById("fill-example").addEventListener("click", () => {
+    Object.entries(example).forEach(([name, value]) => {
+      const el = document.querySelector(`[name="${name}"]`);
+      if (el) el.value = value;
+    });
+    const resEl = document.querySelector('[name="residency_covers_term"]');
+    if (resEl) resEl.checked = true;
+  });
+
+  // Guide toggle
+  const guideToggle = document.getElementById("guide-toggle");
+  guideToggle.addEventListener("click", (event) => {
+    document.body.classList.toggle("guide-collapsed");
+    const expanded = !document.body.classList.contains("guide-collapsed");
+    event.currentTarget.setAttribute("aria-expanded", String(expanded));
+    const currentLang = localStorage.getItem("dss_lang") || "uk";
+    const dict = translations[currentLang] || translations.uk;
+    const toggleText = event.currentTarget.querySelector(".toggle-text");
+    if (toggleText) {
+      toggleText.textContent = expanded ? dict.guideCollapse : dict.guideExpand;
+    }
+  });
+
+  // Restore saved language on load
+  document.addEventListener("DOMContentLoaded", () => {
+    const savedLang = localStorage.getItem("dss_lang") || "uk";
+    applyLanguage(savedLang);
+  });
 </script>
 </body>
 </html>

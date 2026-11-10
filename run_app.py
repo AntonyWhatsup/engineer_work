@@ -1,4 +1,12 @@
 from __future__ import annotations
+import os
+import tempfile
+from pathlib import Path
+# Ensure matplotlib uses a writable cache directory
+os.environ.setdefault('MPLCONFIGDIR', str(Path(tempfile.gettempdir()) / 'mplcache'))
+# Suppress pytest cache permission warnings by directing cache to a writable location
+os.environ.setdefault('PYTEST_CACHE_DIR', str(Path('.pytest_cache')))
+
 
 import argparse
 import hashlib
