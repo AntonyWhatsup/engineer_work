@@ -109,29 +109,9 @@ def create_app(
             ),
         )
 
-    # Additional routes for dual UI
-    @app.get("/bank")
-    def bank():
-        # Serve bank panel directly (same as root)
-        return render_template("bank.html", success=False, data={})
-
-    @app.get("/client")
-    def client():
-        # Serve simplified client portal
-        return render_template("client.html", success=False, data={})
 
     return app
 
-    # Additional routes for dual UI
-    @app.get("/bank")
-    def bank():
-        # Serve bank panel directly (same as root)
-        return render_template("bank.html", success=False, data={})
-
-    @app.get("/client")
-    def client():
-        # Serve simplified client portal
-        return render_template("client.html", success=False, data={})
 
 
 app = None
