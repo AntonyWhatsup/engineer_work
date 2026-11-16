@@ -11,7 +11,9 @@ root = pathlib.Path("d:/GitFile/engineer_work")
 class TestSourceHygiene(unittest.TestCase):
     def test_no_non_ascii_whitespace(self):
         for path in root.rglob("*"):
-            if any(part in {".venv", "venv", ".git", ".pytest_cache", ".ruff_cache", "__pycache__"} for part in path.parts):
+            if any(
+                part in {".venv", "venv", ".git", ".pytest_cache", ".ruff_cache", "__pycache__"} for part in path.parts
+            ):
                 continue
             if path.suffix.lower() in {".py", ".yaml", ".yml", ".html", ".md"}:
                 try:

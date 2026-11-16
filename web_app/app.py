@@ -109,9 +109,7 @@ def create_app(
             ),
         )
 
-
     return app
-
 
 
 app = None

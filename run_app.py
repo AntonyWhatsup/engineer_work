@@ -1,26 +1,30 @@
 from __future__ import annotations
-import tempfile
-from pathlib import Path
-
-# Ensure matplotlib uses a writable cache directory
-os.environ.setdefault('MPLCONFIGDIR', str(Path(tempfile.gettempdir()) / 'mplcache'))
-# Suppress pytest cache permission warnings by directing cache to a writable location
-os.environ.setdefault('PYTEST_CACHE_DIR', str(Path('.pytest_cache')))
 
 import argparse
 import hashlib
-
+import os
 import subprocess
 import sys
+import tempfile
 import venv
 from collections.abc import Sequence
+from pathlib import Path
+
+# Ensure matplotlib uses a writable cache directory
+os.environ.setdefault("MPLCONFIGDIR", str(Path(tempfile.gettempdir()) / "mplcache"))
+# Suppress pytest cache permission warnings by directing cache to a writable location
+os.environ.setdefault("PYTEST_CACHE_DIR", str(Path(".pytest_cache")))
 
 MIN_PYTHON = (3, 10)
 BOOTSTRAP_ENV = "ENGINEER_WORK_BOOTSTRAPPED"
 CANONICAL_DATA_PATH = Path("data") / "accepted_loans.csv"
 DATA_CANDIDATES = (CANONICAL_DATA_PATH, Path("data") / "accepted_2007_to_2018Q4.csv")
+
+
 class LauncherError(RuntimeError):
     """An expected launcher failure that should be shown without a traceback."""
+
+
 def repository_root(anchor: Path | None = None) -> Path:
     candidate = (anchor or Path(__file__)).resolve()
     if candidate.is_file():
@@ -29,18 +33,28 @@ def repository_root(anchor: Path | None = None) -> Path:
         if (directory / "pyproject.toml").is_file() and (directory / "src").is_dir():
             return directory
     raise LauncherError(f"Repository root not found from: {candidate}")
+
+
 def venv_python(venv_dir: Path) -> Path:
     relative = Path("Scripts/python.exe") if os.name == "nt" else Path("bin/python")
     return venv_dir / relative
+
+
 def is_current_interpreter(python_path: Path) -> bool:
     try:
         return Path(sys.executable).resolve() == python_path.resolve()
     except OSError:
         return False
+
+
 def build_reexec_command(python_path: Path, argv: Sequence[str]) -> list[str]:
     return [str(python_path), str(Path(__file__).resolve()), *argv, "--_bootstrapped"]
+
+
 def _requirements_digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def install_dependencies(python_path: Path, root: Path, verbose: bool = False) -> None:
     requirements = root / "requirements.txt"
     stamp = root / ".venv" / ".requirements.sha256"
@@ -62,6 +76,8 @@ def install_dependencies(python_path: Path, root: Path, verbose: bool = False) -
     if result.returncode:
         raise LauncherError(f"Dependency installation failed (exit code {result.returncode}).")
     stamp.write_text(digest + "\n", encoding="utf-8")
+
+
 def ensure_environment(args: argparse.Namespace, argv: Sequence[str], root: Path) -> int | None:
     if sys.version_info < MIN_PYTHON:
         required = ".".join(map(str, MIN_PYTHON))
@@ -90,6 +106,8 @@ def ensure_environment(args: argparse.Namespace, argv: Sequence[str], root: Path
             print(f"Restarting inside .venv: {command}")
         return subprocess.run(command, cwd=root, env=environment, check=False).returncode
     return None
+
+
 def find_training_data(root: Path, requested: Path | None) -> Path | None:
     if requested:
         path = requested if requested.is_absolute() else root / requested
@@ -99,6 +117,8 @@ def find_training_data(root: Path, requested: Path | None) -> Path | None:
         if candidate.is_file():
             return candidate
     return None
+
+
 def missing_inputs_message(root: Path, requested: Path | None = None) -> str:
     expected = requested or CANONICAL_DATA_PATH
     if not expected.is_absolute():
@@ -111,6 +131,8 @@ def missing_inputs_message(root: Path, requested: Path | None = None) -> str:
         f"--data {root / CANONICAL_DATA_PATH} --output {root / 'artifacts'}\n"
         "The application does not create a synthetic production model or invent P(Default)."
     )
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Bootstrap, validate, train, and run the Credit Default Risk DSS.")
     parser.add_argument("--setup-only", action="store_true", help="Prepare .venv and dependencies, then exit.")
@@ -126,6 +148,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--verbose", action="store_true", help="Show diagnostic details and tracebacks.")
     parser.add_argument("--_bootstrapped", action="store_true", help=argparse.SUPPRESS)
     return parser
+
+
 def run(args: argparse.Namespace, root: Path) -> int:
     from src.config import DEFAULT_POLICY_PATH, validate_policy_config
 
@@ -170,6 +194,8 @@ def run(args: argparse.Namespace, root: Path) -> int:
     print(f"Starting DSS at http://{args.host}:{args.port} (debug={args.debug})")
     app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=False)
     return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     effective_argv = list(sys.argv[1:] if argv is None else argv)
     args = _parser().parse_args(effective_argv)
@@ -184,5 +210,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise
         print(f"Error: {exc}", file=sys.stderr)
         return 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
