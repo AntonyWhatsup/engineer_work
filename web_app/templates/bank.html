@@ -142,7 +142,7 @@
       <strong data-i18n="modelLimitTitle">Обмеження моделі:</strong> <span data-i18n="modelLimitText">Модель ML навчена на американському датасеті LendingClub (ринкові дані США, виключно схвалені заявки). Суми доходу та кредиту в PLN конвертуються в USD за прийнятим демонстраційним курсом.</span>
     </div>
     {% if errors %}
-      <div class="alert"><strong data-i18n="valErrors">Перевірте введені дані</strong><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
+        <div class="alert"><strong>Validation errors</strong><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
     {% endif %}
     <form method="post" novalidate id="risk-form">
       <div class="form-grid">
