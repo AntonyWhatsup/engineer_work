@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Credit Risk DSS — Client Portal</title>
+  <style>
+    :root {
+      --bg: #0b1220; --panel: #111c2e; --panel-soft: #17243a; --text: #f4f7fb;
+      --muted: #9fb0c8; --line: #273a55; --accent: #45d0c3; --accent-2: #5c8dff;
+      --warn: #f0b84b; --bad: #f06c75; --ok: #55c98c;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: radial-gradient(circle at 70% 0%, #14284a 0, var(--bg) 42%); color: var(--text); font-family: Inter, "Segoe UI", Arial, sans-serif; }
+    button, input, select, textarea { font: inherit; }
+    a { color: var(--accent); }
+    /* Header */
+    .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 18px 32px; border-bottom: 1px solid var(--line); background: rgba(17,28,46,.96); backdrop-filter: blur(12px); }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #07111f; font-weight: 900; font-size: 1rem; }
+    .brand h1 { font-size: 1.15rem; margin: 0; }
+    .brand .eyebrow { color: var(--accent); font-weight: 800; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; }
+    .top-right { display: flex; align-items: center; gap: 16px; }
+    .lang-badge { display: inline-flex; align-items: center; background: #0a1424; border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
+    .lang-btn { background: transparent; border: 0; color: var(--muted); font-size: .72rem; font-weight: 750; letter-spacing: .04em; padding: 4px 10px; border-radius: 999px; cursor: pointer; transition: all .18s ease; }
+    .lang-btn:hover { color: var(--text); }
+    .lang-btn.active { background: linear-gradient(135deg, var(--accent), #38b6e9); color: #06121d; font-weight: 850; box-shadow: 0 2px 8px rgba(69,208,195,.28); }
+    /* Layout */
+    .page { max-width: 920px; margin: 0 auto; padding: 32px 24px 60px; }
+    h2, h3, h4, p { margin-top: 0; }
+    h2 { font-size: 1.5rem; }
+    .muted { color: var(--muted); line-height: 1.55; }
+    .panel { background: linear-gradient(145deg, rgba(23,36,58,.96), rgba(14,25,43,.96)); border: 1px solid var(--line); border-radius: 16px; padding: 26px; margin-bottom: 22px; box-shadow: 0 18px 45px rgba(0,0,0,.16); }
+    /* Steps */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0; }
+    .step { background: #0d192a; border: 1px solid var(--line); border-radius: 14px; padding: 22px 18px; text-align: center; }
+    .step-num { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #06121d; font-weight: 900; font-size: 1rem; margin-bottom: 10px; }
+    .step p { font-size: .85rem; margin: 0; color: var(--text); font-weight: 600; }
+    /* Form */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field.full { grid-column: 1 / -1; }
+    label { display: block; color: #dce7f6; font-size: .84rem; font-weight: 650; margin-bottom: 6px; }
+    .field-help { display: block; color: var(--muted); font-size: .72rem; margin-top: 5px; }
+    input, select { width: 100%; min-height: 44px; background: #0a1424; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; outline: 0; }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(69,208,195,.13); }
+    .check-row { display: flex; gap: 9px; align-items: flex-start; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #0a1424; }
+    .check-row input[type="checkbox"] { width: 18px; min-height: 18px; margin-top: 2px; }
+    .check-row label { margin: 0; }
+    .btn { border: 0; border-radius: 12px; min-height: 48px; padding: 12px 22px; cursor: pointer; font-weight: 800; font-size: .95rem; }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #38b6e9); color: #06121d; }
+    .btn-secondary { background: var(--panel-soft); color: var(--text); border: 1px solid var(--line); }
+    .btn:hover { filter: brightness(1.08); }
+    .button-row { display: flex; gap: 12px; margin-top: 22px; }
+    /* Result */
+    .result-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .result-icon { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 1.5rem; flex-shrink: 0; }
+    .result-icon.ok { background: rgba(85,201,140,.2); color: var(--ok); }
+    .result-icon.warn { background: rgba(240,184,75,.2); color: var(--warn); }
+    .result-icon.bad { background: rgba(240,108,117,.2); color: var(--bad); }
+    .result-summary { font-size: 1.2rem; font-weight: 700; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+    .info-card { padding: 16px; background: #0d192a; border: 1px solid var(--line); border-radius: 12px; }
+    .info-card .card-label { display: block; color: var(--muted); font-size: .78rem; margin-bottom: 6px; }
+    .info-card .card-value { display: block; font-size: 1.15rem; font-weight: 700; }
+    .alert-box { border-radius: 12px; padding: 16px; margin-top: 18px; font-size: .88rem; line-height: 1.5; }
+    .alert-box.info { background: rgba(92,141,255,.1); border: 1px solid rgba(92,141,255,.35); }
+    .alert-box.warning { background: rgba(240,184,75,.1); border: 1px solid rgba(240,184,75,.35); }
+    .alert-box.danger { background: rgba(240,108,117,.1); border: 1px solid rgba(240,108,117,.4); }
+    .alert-box.success { background: rgba(85,201,140,.1); border: 1px solid rgba(85,201,140,.35); }
+    /* Support chat */
+    .support-panel { margin-top: 26px; }
+    .support-panel h3 { margin-bottom: 12px; }
+    .faq-item { border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+    .faq-q { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; cursor: pointer; font-weight: 650; font-size: .88rem; background: #0d192a; }
+    .faq-q:hover { background: #12223a; }
+    .faq-a { padding: 0 16px; max-height: 0; overflow: hidden; transition: max-height .25s ease, padding .25s ease; color: var(--muted); font-size: .84rem; line-height: 1.55; }
+    .faq-item.open .faq-a { max-height: 300px; padding: 12px 16px 16px; }
+    .faq-item.open .faq-q .faq-arrow { transform: rotate(180deg); }
+    .faq-arrow { transition: transform .2s; }
+    .nav-link { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; font-size: .78rem; font-weight: 600; }
+    .nav-link:hover { color: var(--accent); }
+    .validation-alert { background: rgba(240,108,117,.12); border: 1px solid rgba(240,108,117,.5); border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+    /* Responsive */
+    @media (max-width: 700px) {
+      .top-bar { flex-direction: column; gap: 10px; padding: 14px 18px; }
+      .page { padding: 20px 14px 40px; }
+      .steps, .form-grid, .info-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <div class="brand">
+      <div class="brand-mark">CR</div>
+      <div>
+        <h1>Credit Risk DSS</h1>
+        <span class="eyebrow" data-i18n="clientSubtitle">Клієнтський портал</span>
+      </div>
+    </div>
+    <div class="top-right">
+      <a class="nav-link" href="/bank" data-i18n="navBank">Панель аналітика →</a>
+      <div class="lang-badge" role="group" aria-label="Мова / Language">
+        <button type="button" class="lang-btn active" data-lang="uk" title="Українська">UA</button>
+        <button type="button" class="lang-btn" data-lang="pl" title="Polski">PL</button>
+        <button type="button" class="lang-btn" data-lang="en" title="English">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <!-- Welcome / Steps -->
+    <div class="panel" style="text-align:center; padding: 36px 26px;">
+      <h2 data-i18n="welcomeTitle">Перевірте умови вашого кредиту</h2>
+      <p class="muted" data-i18n="welcomeDesc">Заповніть дані нижче, щоб отримати попередню оцінку. Це не є офіційним рішенням банку — лише інформативний розрахунок.</p>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><p data-i18n="step1">Заповніть дані</p></div>
+        <div class="step"><div class="step-num">2</div><p data-i18n="step2">Отримайте оцінку</p></div>
+        <div class="step"><div class="step-num">3</div><p data-i18n="step3">Зверніться до консультанта</p></div>
+      </div>
+    </div>
+
+    {% if errors %}
+      <div class="validation-alert"><strong data-i18n="valErrors">Перевірте введені дані</strong><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
+    {% endif %}
+
+    <!-- Application Form -->
+    <div class="panel">
+      <h3 data-i18n="formTitle">Ваші дані</h3>
+      <p class="muted" style="font-size:.84rem" data-i18n="formDesc">Введіть інформацію для попередньої оцінки кредитоспроможності.</p>
+      <form method="post" novalidate id="client-form">
+        <div class="form-grid">
+          <div class="field">
+            <label for="loan_amnt" data-i18n="lblLoanAmnt">Бажана сума кредиту (PLN)</label>
+            <input id="loan_amnt" name="loan_amnt" type="number" min="0" step="0.01" placeholder="12000" value="{{ data.loan_amnt if data else '' }}">
+          </div>
+          <div class="field">
+            <label for="term" data-i18n="lblTerm">На який термін</label>
+            <select id="term" name="term">
+              <option value="36" data-i18n="optTerm36" {% if data and data.term|string == '36' %}selected{% endif %}>36 місяців (3 роки)</option>
+              <option value="60" data-i18n="optTerm60" {% if data and data.term|string == '60' %}selected{% endif %}>60 місяців (5 років)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="apr" data-i18n="lblApr">Процентна ставка, %</label>
+            <input id="apr" name="apr" type="number" min="0" max="100" step="0.01" placeholder="9.5" value="{{ data.apr if data else '10' }}">
+            <small class="field-help" data-i18n="helpApr">Річна процентна ставка (APR)</small>
+          </div>
+          <div class="field">
+            <label for="annual_inc" data-i18n="lblAnnualInc">Ваш річний дохід (PLN)</label>
+            <input id="annual_inc" name="annual_inc" type="number" min="0" step="0.01" placeholder="72000" value="{{ data.annual_inc if data else '' }}">
+            <small class="field-help" data-i18n="helpAnnualInc">Дохід до сплати податків</small>
+          </div>
+          <div class="field">
+            <label for="dti" data-i18n="lblDti">Частка існуючих виплат, %</label>
+            <input id="dti" name="dti" type="number" min="0" max="100" step="0.01" placeholder="18" value="{{ data.dti if data else '' }}">
+            <small class="field-help" data-i18n="helpDti">Скільки % доходу йде на поточні кредити</small>
+          </div>
+          <div class="field">
+            <label for="fico_range_low" data-i18n="lblFico">Кредитний рейтинг (300–850)</label>
+            <input id="fico_range_low" name="fico_range_low" type="number" min="300" max="850" step="1" placeholder="710" value="{{ data.fico_range_low if data else '' }}">
+            <small class="field-help" data-i18n="helpFico">Бал FICO або аналогічний скоринг</small>
+          </div>
+          <div class="field">
+            <label for="emp_length" data-i18n="lblEmpLength">Стаж роботи (років)</label>
+            <input id="emp_length" name="emp_length" type="number" min="0" max="50" step="0.1" placeholder="6" value="{{ data.emp_length if data else '5' }}">
+          </div>
+          <div class="field">
+            <label for="num_dependents" data-i18n="lblDependents">Утриманці (кількість)</label>
+            <input id="num_dependents" name="num_dependents" type="number" min="0" max="20" step="1" placeholder="1" value="{{ data.num_dependents if data else '0' }}">
+          </div>
+          <div class="field full">
+            <label for="home_ownership" data-i18n="lblHomeOwnership">Ваше житло</label>
+            <select id="home_ownership" name="home_ownership">
+              <option value="RENT" data-i18n="optRent" {% if data and data.home_ownership == 'RENT' %}selected{% endif %}>Оренда</option>
+              <option value="OWN" data-i18n="optOwn" {% if data and data.home_ownership == 'OWN' %}selected{% endif %}>Власне</option>
+              <option value="MORTGAGE" data-i18n="optMortgage" {% if data and data.home_ownership == 'MORTGAGE' %}selected{% endif %}>Іпотека</option>
+              <option value="OTHER" data-i18n="optOtherHome" {% if data and data.home_ownership == 'OTHER' %}selected{% endif %}>Інше</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="purpose" data-i18n="lblPurpose">Мета кредиту</label>
+            <select id="purpose" name="purpose">
+              <option value="debt_consolidation" data-i18n="optDebtCons" {% if data and data.purpose == 'debt_consolidation' %}selected{% endif %}>Консолідація боргів</option>
+              <option value="credit_card" data-i18n="optCreditCard" {% if data and data.purpose == 'credit_card' %}selected{% endif %}>Погашення кредитної картки</option>
+              <option value="home_improvement" data-i18n="optHomeImpr" {% if data and data.purpose == 'home_improvement' %}selected{% endif %}>Ремонт житла</option>
+              <option value="major_purchase" data-i18n="optMajorPurch" {% if data and data.purpose == 'major_purchase' %}selected{% endif %}>Велика покупка</option>
+              <option value="other" data-i18n="optOtherPurp" {% if data and data.purpose == 'other' %}selected{% endif %}>Інше</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="verification_status" data-i18n="lblVerification">Підтвердження доходу</label>
+            <select id="verification_status" name="verification_status">
+              <option value="Verified" data-i18n="optVerified" {% if data and data.verification_status == 'Verified' %}selected{% endif %}>Підтверджено</option>
+              <option value="Source Verified" data-i18n="optSourceVerified" {% if data and data.verification_status == 'Source Verified' %}selected{% endif %}>Підтверджено документами</option>
+              <option value="Not Verified" data-i18n="optNotVerified" {% if data and data.verification_status == 'Not Verified' %}selected{% endif %}>Не підтверджено</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="employment_type" data-i18n="lblEmployment">Форма зайнятості</label>
+            <select id="employment_type" name="employment_type">
+              <option value="UOP_UNDEFINED" data-i18n="optUopUndef" {% if data and data.employment_type == 'UOP_UNDEFINED' %}selected{% endif %}>Безстроковий договір</option>
+              <option value="UOP_FIXED" data-i18n="optUopFixed" {% if data and data.employment_type == 'UOP_FIXED' %}selected{% endif %}>Строковий договір</option>
+              <option value="B2B_GE_12M" data-i18n="optB2bGe12" {% if data and data.employment_type == 'B2B_GE_12M' %}selected{% endif %}>B2B (понад 12 міс.)</option>
+              <option value="B2B_LT_12M" data-i18n="optB2bLt12" {% if data and data.employment_type == 'B2B_LT_12M' %}selected{% endif %}>B2B (менше 12 міс.)</option>
+              <option value="OTHER" data-i18n="optOtherEmp" {% if data and data.employment_type == 'OTHER' %}selected{% endif %}>Інше / фриланс</option>
+            </select>
+          </div>
+          <div class="field full check-row">
+            <input id="residency_covers_term" type="checkbox" name="residency_covers_term" value="true" {% if not data or data.residency_covers_term %}checked{% endif %}>
+            <label for="residency_covers_term" data-i18n="lblResidency">Маю право проживання на весь термін кредиту</label>
+          </div>
+        </div>
+        <div class="button-row">
+          <button class="btn btn-primary" type="submit" data-i18n="btnSubmit">Перевірити</button>
+          <button class="btn btn-secondary" type="button" id="fill-example" data-i18n="btnExample">Заповнити приклад</button>
+        </div>
+      </form>
+    </div>
+
+    {% if success %}
+    <!-- Result section -->
+    <div class="panel">
+      <div class="result-header">
+        {% if result.decision.status == 'LOWER_RISK' %}
+          <div class="result-icon ok">✓</div>
+          <div class="result-summary" data-i18n="resultLower">Попередня оцінка: позитивна</div>
+        {% elif result.decision.status in ('ELEVATED_RISK', 'MANUAL_REVIEW') %}
+          <div class="result-icon warn">⚠</div>
+          <div class="result-summary" data-i18n="resultElevated">Попередня оцінка: потребує додаткової перевірки</div>
+        {% else %}
+          <div class="result-icon bad">✕</div>
+          <div class="result-summary" data-i18n="resultHigh">Попередня оцінка: високий ризик</div>
+        {% endif %}
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <span class="card-label" data-i18n="cardPaymentClient">Орієнтовний місячний платіж</span>
+          <span class="card-value">{{ result.policy.indicators.new_monthly_payment | round(2) }} PLN</span>
+        </div>
+        <div class="info-card">
+          <span class="card-label" data-i18n="cardCashClient">Залишок після виплат</span>
+          <span class="card-value">{{ result.policy.indicators.cash_left | round(2) }} PLN</span>
+        </div>
+      </div>
+
+      {% if result.decision.status == 'LOWER_RISK' %}
+        <div class="alert-box success" data-i18n="msgLower">
+          За попередніми розрахунками, ваша заявка відповідає основним критеріям. Зверніться до консультанта для подальших кроків та підготовки документів.
+        </div>
+      {% elif result.decision.status in ('ELEVATED_RISK', 'MANUAL_REVIEW') %}
+        <div class="alert-box warning" data-i18n="msgElevated">
+          Ваша заявка потребує додаткової перевірки спеціалістом. Це не є відмовою — можливо, знадобляться додаткові документи або уточнення.
+        </div>
+      {% else %}
+        <div class="alert-box danger" data-i18n="msgHigh">
+          На жаль, за поточними параметрами ризик оцінюється як високий. Рекомендуємо звернутися до консультанта для обговорення альтернативних варіантів.
+        </div>
+      {% endif %}
+
+      <div class="alert-box info" style="margin-top:14px">
+        <strong data-i18n="disclaimerTitle">Зверніть увагу:</strong>
+        <span data-i18n="disclaimerText">Це попередня оцінка навчальної системи. Остаточне рішення приймає банк після повної перевірки.</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Support / FAQ section -->
+    <div class="panel support-panel">
+      <h3 data-i18n="supportTitle">Часті запитання</h3>
+      <p class="muted" style="font-size:.84rem" data-i18n="supportDesc">Якщо у вас є питання щодо процесу, ознайомтесь з відповідями нижче або зверніться до консультанта.</p>
+
+      <div class="faq-item">
+        <div class="faq-q" data-i18n="faq1q">Які документи потрібні для подачі заявки? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a" data-i18n="faq1a">Зазвичай потрібні: паспорт або ID-картка, довідка про доходи (за останні 3–6 місяців), виписка з банківського рахунку, та документ, що підтверджує місце проживання.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" data-i18n="faq2q">Як довго розглядається заявка? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a" data-i18n="faq2a">Попередня оцінка виконується миттєво. Офіційне рішення банку зазвичай займає від 1 до 5 робочих днів після подачі повного пакету документів.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" data-i18n="faq3q">Що робити, якщо оцінка негативна? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a" data-i18n="faq3a">Негативна попередня оцінка не означає остаточну відмову. Зверніться до консультанта — можливо, зменшення суми кредиту, вибір іншого терміну або залучення поручителя допоможуть покращити умови.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" data-i18n="faq4q">Чи впливає ця перевірка на мій кредитний рейтинг? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a" data-i18n="faq4a">Ні. Ця попередня оцінка не надсилає запит до бюро кредитних історій і ніяк не впливає на ваш кредитний рейтинг.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" data-i18n="faq5q">Як зв'язатися з консультантом? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a" data-i18n="faq5a">Ви можете зателефонувати на гарячу лінію банку, відвідати найближче відділення, або скористатися онлайн-чатом на офіційному сайті банку.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const translations = {
+    uk: {
+      clientSubtitle: "Клієнтський портал",
+      navBank: "Панель аналітика →",
+      welcomeTitle: "Перевірте умови вашого кредиту",
+      welcomeDesc: "Заповніть дані нижче, щоб отримати попередню оцінку. Це не є офіційним рішенням банку — лише інформативний розрахунок.",
+      step1: "Заповніть дані", step2: "Отримайте оцінку", step3: "Зверніться до консультанта",
+      valErrors: "Перевірте введені дані",
+      formTitle: "Ваші дані", formDesc: "Введіть інформацію для попередньої оцінки кредитоспроможності.",
+      lblLoanAmnt: "Бажана сума кредиту (PLN)", lblTerm: "На який термін",
+      lblApr: "Процентна ставка, %", helpApr: "Річна процентна ставка (APR)",
+      lblAnnualInc: "Ваш річний дохід (PLN)", helpAnnualInc: "Дохід до сплати податків",
+      lblDti: "Частка існуючих виплат, %", helpDti: "Скільки % доходу йде на поточні кредити",
+      lblFico: "Кредитний рейтинг (300–850)", helpFico: "Бал FICO або аналогічний скоринг",
+      lblEmpLength: "Стаж роботи (років)", lblDependents: "Утриманці (кількість)",
+      lblHomeOwnership: "Ваше житло", lblPurpose: "Мета кредиту",
+      lblVerification: "Підтвердження доходу", lblEmployment: "Форма зайнятості",
+      lblResidency: "Маю право проживання на весь термін кредиту",
+      btnSubmit: "Перевірити", btnExample: "Заповнити приклад",
+      optTerm36: "36 місяців (3 роки)", optTerm60: "60 місяців (5 років)",
+      optRent: "Оренда", optOwn: "Власне", optMortgage: "Іпотека", optOtherHome: "Інше",
+      optDebtCons: "Консолідація боргів", optCreditCard: "Погашення кредитної картки",
+      optHomeImpr: "Ремонт житла", optMajorPurch: "Велика покупка", optOtherPurp: "Інше",
+      optVerified: "Підтверджено", optSourceVerified: "Підтверджено документами", optNotVerified: "Не підтверджено",
+      optUopUndef: "Безстроковий договір", optUopFixed: "Строковий договір",
+      optB2bGe12: "B2B (понад 12 міс.)", optB2bLt12: "B2B (менше 12 міс.)", optOtherEmp: "Інше / фриланс",
+      resultLower: "Попередня оцінка: позитивна",
+      resultElevated: "Попередня оцінка: потребує додаткової перевірки",
+      resultHigh: "Попередня оцінка: високий ризик",
+      cardPaymentClient: "Орієнтовний місячний платіж", cardCashClient: "Залишок після виплат",
+      msgLower: "За попередніми розрахунками, ваша заявка відповідає основним критеріям. Зверніться до консультанта для подальших кроків та підготовки документів.",
+      msgElevated: "Ваша заявка потребує додаткової перевірки спеціалістом. Це не є відмовою — можливо, знадобляться додаткові документи або уточнення.",
+      msgHigh: "На жаль, за поточними параметрами ризик оцінюється як високий. Рекомендуємо звернутися до консультанта для обговорення альтернативних варіантів.",
+      disclaimerTitle: "Зверніть увагу:", disclaimerText: "Це попередня оцінка навчальної системи. Остаточне рішення приймає банк після повної перевірки.",
+      supportTitle: "Часті запитання", supportDesc: "Якщо у вас є питання щодо процесу, ознайомтесь з відповідями нижче або зверніться до консультанта.",
+      faq1q: "Які документи потрібні для подачі заявки? <span class='faq-arrow'>▾</span>",
+      faq1a: "Зазвичай потрібні: паспорт або ID-картка, довідка про доходи (за останні 3–6 місяців), виписка з банківського рахунку, та документ, що підтверджує місце проживання.",
+      faq2q: "Як довго розглядається заявка? <span class='faq-arrow'>▾</span>",
+      faq2a: "Попередня оцінка виконується миттєво. Офіційне рішення банку зазвичай займає від 1 до 5 робочих днів після подачі повного пакету документів.",
+      faq3q: "Що робити, якщо оцінка негативна? <span class='faq-arrow'>▾</span>",
+      faq3a: "Негативна попередня оцінка не означає остаточну відмову. Зверніться до консультанта — можливо, зменшення суми кредиту, вибір іншого терміну або залучення поручителя допоможуть покращити умови.",
+      faq4q: "Чи впливає ця перевірка на мій кредитний рейтинг? <span class='faq-arrow'>▾</span>",
+      faq4a: "Ні. Ця попередня оцінка не надсилає запит до бюро кредитних історій і ніяк не впливає на ваш кредитний рейтинг.",
+      faq5q: "Як зв'язатися з консультантом? <span class='faq-arrow'>▾</span>",
+      faq5a: "Ви можете зателефонувати на гарячу лінію банку, відвідати найближче відділення, або скористатися онлайн-чатом на офіційному сайті банку."
+    },
+    pl: {
+      clientSubtitle: "Portal klienta",
+      navBank: "Panel analityka →",
+      welcomeTitle: "Sprawdź warunki swojego kredytu",
+      welcomeDesc: "Wypełnij dane poniżej, aby uzyskać wstępną ocenę. To nie jest oficjalna decyzja banku — jedynie poglądowa kalkulacja.",
+      step1: "Wypełnij dane", step2: "Uzyskaj ocenę", step3: "Skontaktuj się z doradcą",
+      valErrors: "Sprawdź wprowadzone dane",
+      formTitle: "Twoje dane", formDesc: "Wprowadź informacje do wstępnej oceny zdolności kredytowej.",
+      lblLoanAmnt: "Wnioskowana kwota kredytu (PLN)", lblTerm: "Na jaki okres",
+      lblApr: "Oprocentowanie, %", helpApr: "Roczna stopa oprocentowania (APR)",
+      lblAnnualInc: "Twój roczny dochód (PLN)", helpAnnualInc: "Dochód brutto przed opodatkowaniem",
+      lblDti: "Udział obecnych rat, %", helpDti: "Jaki % dochodu przeznaczasz na raty",
+      lblFico: "Ocena kredytowa (300–850)", helpFico: "Punktacja FICO lub analogiczny scoring",
+      lblEmpLength: "Staż pracy (lata)", lblDependents: "Osoby na utrzymaniu",
+      lblHomeOwnership: "Twoje mieszkanie", lblPurpose: "Cel kredytu",
+      lblVerification: "Weryfikacja dochodu", lblEmployment: "Forma zatrudnienia",
+      lblResidency: "Mam prawo pobytu na cały okres kredytu",
+      btnSubmit: "Sprawdź", btnExample: "Wypełnij przykład",
+      optTerm36: "36 miesięcy (3 lata)", optTerm60: "60 miesięcy (5 lat)",
+      optRent: "Wynajem", optOwn: "Własne", optMortgage: "Hipoteka", optOtherHome: "Inne",
+      optDebtCons: "Konsolidacja długów", optCreditCard: "Spłata karty kredytowej",
+      optHomeImpr: "Remont mieszkania", optMajorPurch: "Duży zakup", optOtherPurp: "Inne",
+      optVerified: "Zweryfikowany", optSourceVerified: "Zweryfikowany dokumentami", optNotVerified: "Niezweryfikowany",
+      optUopUndef: "Umowa na czas nieokreślony", optUopFixed: "Umowa na czas określony",
+      optB2bGe12: "B2B (powyżej 12 mies.)", optB2bLt12: "B2B (poniżej 12 mies.)", optOtherEmp: "Inne / freelance",
+      resultLower: "Wstępna ocena: pozytywna",
+      resultElevated: "Wstępna ocena: wymaga dodatkowej weryfikacji",
+      resultHigh: "Wstępna ocena: wysokie ryzyko",
+      cardPaymentClient: "Szacunkowa rata miesięczna", cardCashClient: "Pozostaje po spłatach",
+      msgLower: "Według wstępnych obliczeń, Twój wniosek spełnia podstawowe kryteria. Skontaktuj się z doradcą w celu dalszych kroków i przygotowania dokumentów.",
+      msgElevated: "Twój wniosek wymaga dodatkowej weryfikacji przez specjalistę. To nie jest odmowa — mogą być potrzebne dodatkowe dokumenty lub wyjaśnienia.",
+      msgHigh: "Niestety, przy obecnych parametrach ryzyko jest oceniane jako wysokie. Zalecamy kontakt z doradcą w celu omówienia alternatywnych opcji.",
+      disclaimerTitle: "Uwaga:", disclaimerText: "To wstępna ocena systemu edukacyjnego. Ostateczną decyzję podejmuje bank po pełnej weryfikacji.",
+      supportTitle: "Najczęstsze pytania", supportDesc: "Jeśli masz pytania dotyczące procesu, zapoznaj się z odpowiedziami poniżej lub skontaktuj się z doradcą.",
+      faq1q: "Jakie dokumenty są potrzebne do złożenia wniosku? <span class='faq-arrow'>▾</span>",
+      faq1a: "Zazwyczaj potrzebne są: paszport lub dowód osobisty, zaświadczenie o dochodach (za ostatnie 3–6 miesięcy), wyciąg z konta bankowego oraz dokument potwierdzający miejsce zamieszkania.",
+      faq2q: "Jak długo trwa rozpatrywanie wniosku? <span class='faq-arrow'>▾</span>",
+      faq2a: "Wstępna ocena jest natychmiastowa. Oficjalna decyzja banku zajmuje zazwyczaj od 1 do 5 dni roboczych po złożeniu kompletu dokumentów.",
+      faq3q: "Co zrobić, jeśli ocena jest negatywna? <span class='faq-arrow'>▾</span>",
+      faq3a: "Negatywna wstępna ocena nie oznacza ostatecznej odmowy. Skontaktuj się z doradcą — zmniejszenie kwoty, inny okres lub poręczyciel mogą pomóc.",
+      faq4q: "Czy ta weryfikacja wpływa na moją historię kredytową? <span class='faq-arrow'>▾</span>",
+      faq4a: "Nie. Ta wstępna ocena nie wysyła zapytania do biura informacji kredytowej i nie wpływa na Twoją historię.",
+      faq5q: "Jak skontaktować się z doradcą? <span class='faq-arrow'>▾</span>",
+      faq5a: "Możesz zadzwonić na infolinię banku, odwiedzić najbliższy oddział lub skorzystać z czatu online na stronie banku."
+    },
+    en: {
+      clientSubtitle: "Client Portal",
+      navBank: "Analyst Panel →",
+      welcomeTitle: "Check your loan conditions",
+      welcomeDesc: "Fill in the details below to get a preliminary assessment. This is not an official bank decision — just an informational calculation.",
+      step1: "Fill in details", step2: "Get assessment", step3: "Contact a consultant",
+      valErrors: "Please check the input data",
+      formTitle: "Your details", formDesc: "Enter information for a preliminary credit assessment.",
+      lblLoanAmnt: "Desired loan amount (PLN)", lblTerm: "Loan term",
+      lblApr: "Interest rate, %", helpApr: "Annual percentage rate (APR)",
+      lblAnnualInc: "Your annual income (PLN)", helpAnnualInc: "Income before taxes",
+      lblDti: "Existing payments share, %", helpDti: "% of income going to existing loans",
+      lblFico: "Credit score (300–850)", helpFico: "FICO score or similar scoring",
+      lblEmpLength: "Employment length (years)", lblDependents: "Dependents (number)",
+      lblHomeOwnership: "Your housing", lblPurpose: "Loan purpose",
+      lblVerification: "Income verification", lblEmployment: "Employment type",
+      lblResidency: "I have the right to reside for the entire loan term",
+      btnSubmit: "Check", btnExample: "Fill example",
+      optTerm36: "36 months (3 years)", optTerm60: "60 months (5 years)",
+      optRent: "Rent", optOwn: "Own property", optMortgage: "Mortgage", optOtherHome: "Other",
+      optDebtCons: "Debt consolidation", optCreditCard: "Credit card repayment",
+      optHomeImpr: "Home renovation", optMajorPurch: "Major purchase", optOtherPurp: "Other",
+      optVerified: "Verified", optSourceVerified: "Document-verified", optNotVerified: "Not verified",
+      optUopUndef: "Permanent contract", optUopFixed: "Fixed-term contract",
+      optB2bGe12: "B2B (over 12 mo.)", optB2bLt12: "B2B (under 12 mo.)", optOtherEmp: "Other / freelance",
+      resultLower: "Preliminary assessment: positive",
+      resultElevated: "Preliminary assessment: additional review needed",
+      resultHigh: "Preliminary assessment: high risk",
+      cardPaymentClient: "Estimated monthly payment", cardCashClient: "Remaining after payments",
+      msgLower: "Based on preliminary calculations, your application meets the basic criteria. Contact a consultant for next steps and document preparation.",
+      msgElevated: "Your application requires additional review by a specialist. This is not a rejection — additional documents or clarification may be needed.",
+      msgHigh: "Unfortunately, with the current parameters the risk is assessed as high. We recommend contacting a consultant to discuss alternative options.",
+      disclaimerTitle: "Please note:", disclaimerText: "This is a preliminary assessment by an educational system. The final decision is made by the bank after a full review.",
+      supportTitle: "Frequently Asked Questions", supportDesc: "If you have questions about the process, check the answers below or contact a consultant.",
+      faq1q: "What documents are needed to apply? <span class='faq-arrow'>▾</span>",
+      faq1a: "Typically required: passport or ID card, income certificate (for the last 3–6 months), bank statement, and proof of address.",
+      faq2q: "How long does the application review take? <span class='faq-arrow'>▾</span>",
+      faq2a: "The preliminary assessment is instant. The bank's official decision usually takes 1 to 5 business days after submitting the complete document package.",
+      faq3q: "What to do if the assessment is negative? <span class='faq-arrow'>▾</span>",
+      faq3a: "A negative preliminary assessment does not mean a final rejection. Contact a consultant — reducing the loan amount, choosing a different term, or involving a guarantor may help improve conditions.",
+      faq4q: "Does this check affect my credit score? <span class='faq-arrow'>▾</span>",
+      faq4a: "No. This preliminary assessment does not send a request to credit bureaus and does not affect your credit score in any way.",
+      faq5q: "How to contact a consultant? <span class='faq-arrow'>▾</span>",
+      faq5a: "You can call the bank's hotline, visit the nearest branch, or use the online chat on the bank's official website."
+    }
+  };
+
+  function applyLanguage(lang) {
+    const dict = translations[lang] || translations.uk;
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+      const key = el.getAttribute("data-i18n");
+      if (dict[key] !== undefined) {
+        if (dict[key].includes("<")) { el.innerHTML = dict[key]; } else { el.textContent = dict[key]; }
+      }
+    });
+    document.querySelectorAll(".lang-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.getAttribute("data-lang") === lang);
+    });
+    document.documentElement.lang = lang;
+    localStorage.setItem("dss_lang", lang);
+  }
+
+  document.querySelectorAll(".lang-btn").forEach((btn) => {
+    btn.addEventListener("click", () => { applyLanguage(btn.getAttribute("data-lang")); });
+  });
+
+  // FAQ accordion
+  document.querySelectorAll(".faq-q").forEach((q) => {
+    q.addEventListener("click", () => { q.parentElement.classList.toggle("open"); });
+  });
+
+  // Example filler
+  const example = {
+    loan_amnt: "12000", term: "36", apr: "9.5", annual_inc: "72000", dti: "18",
+    fico_range_low: "710", emp_length: "6", num_dependents: "1",
+    home_ownership: "RENT", purpose: "debt_consolidation",
+    verification_status: "Verified", employment_type: "UOP_FIXED"
+  };
+  document.getElementById("fill-example").addEventListener("click", () => {
+    Object.entries(example).forEach(([name, value]) => {
+      const el = document.querySelector(`[name="${name}"]`);
+      if (el) el.value = value;
+    });
+    const resEl = document.querySelector('[name="residency_covers_term"]');
+    if (resEl) resEl.checked = true;
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const savedLang = localStorage.getItem("dss_lang") || "uk";
+    applyLanguage(savedLang);
+  });
+</script>
+</body>
+</html>
+
