@@ -1,4 +1,5 @@
-import os, json, pathlib
+import json
+import pathlib
 root = pathlib.Path('.')
 file_counts = {}
 py_lines = 0
@@ -9,7 +10,7 @@ for path in root.rglob('*'):
         file_counts[ext] = file_counts.get(ext, 0) + 1
         if ext == '.py':
             try:
-                with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                with open(path, encoding='utf-8', errors='ignore') as f:
                     lines = sum(1 for _ in f)
                 py_lines += lines
                 py_size += path.stat().st_size
