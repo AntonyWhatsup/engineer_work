@@ -1,9 +1,11 @@
 import json
 import pathlib
+
 root = pathlib.Path('.')
 file_counts = {}
 py_lines = 0
 py_size = 0
+
 for path in root.rglob('*'):
     if path.is_file():
         ext = path.suffix.lower()
@@ -16,6 +18,7 @@ for path in root.rglob('*'):
                 py_size += path.stat().st_size
             except Exception:
                 pass
+
 metrics = {
     'file_counts': file_counts,
     'python': {
@@ -25,4 +28,3 @@ metrics = {
     }
 }
 print(json.dumps(metrics, indent=2))
-
