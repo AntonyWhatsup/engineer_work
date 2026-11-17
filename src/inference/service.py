@@ -24,7 +24,8 @@ class CreditRiskService:
         self.artifact: ModelArtifact = load_artifact(artifact_path, self.policy_config)
 
     def predict(self, application: ValidatedApplication) -> InferenceResult:
-        frame = application.to_model_frame(DEFAULT_SCHEMA)
+        fx = float(self.policy_config.get("fx_pln_per_usd", 1.0))
+        frame = application.to_model_frame(DEFAULT_SCHEMA, fx_pln_per_usd=fx)
         validate_model_frame(frame, DEFAULT_SCHEMA)
         probabilities = self.artifact.pipeline.predict_proba(frame)[0]
         probability_default = float(probabilities[1])

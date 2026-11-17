@@ -39,6 +39,7 @@ def test_prepare_lendingclub_frame_filters_and_schema():
     )
     prepared = prepare_lendingclub_frame(raw)
     assert prepared["target"].tolist() == [0, 1]
+    assert prepared["emp_length"].tolist() == [10.0, 0.0]
     assert list(prepared.drop(columns=["target"]).columns) == [
         "loan_amnt",
         "term",
@@ -50,6 +51,28 @@ def test_prepare_lendingclub_frame_filters_and_schema():
         "purpose",
         "verification_status",
     ]
+
+
+def test_emp_length_mapping_and_nan_preservation():
+    raw = pd.DataFrame(
+        {
+            "loan_status": ["Fully Paid", "Charged Off", "Fully Paid", "Charged Off"],
+            "loan_amnt": [1000, 2000, 3000, 4000],
+            "term": [" 36 months", " 60 months", " 36 months", " 36 months"],
+            "annual_inc": [50000, 40000, 60000, 70000],
+            "dti": [10, 30, 20, 15],
+            "fico_range_low": [700, 620, 710, 680],
+            "emp_length": ["< 1 year", "1 year", None, "10+ years"],
+            "home_ownership": ["RENT", "OWN", "MORTGAGE", "RENT"],
+            "purpose": ["credit_card", "other", "other", "credit_card"],
+            "verification_status": ["Verified", "Not Verified", "Verified", "Verified"],
+        }
+    )
+    prepared = prepare_lendingclub_frame(raw)
+    assert prepared["emp_length"].iloc[0] == 0.0
+    assert prepared["emp_length"].iloc[1] == 1.0
+    assert pd.isna(prepared["emp_length"].iloc[2])
+    assert prepared["emp_length"].iloc[3] == 10.0
 
 
 def test_annuity_payment_zero_and_regular_rate():
@@ -126,6 +149,63 @@ def test_artifact_without_predict_proba_is_blocked(artifact_path, tmp_path):
     save_artifact(bad_path, ModelArtifact(object(), artifact.metadata))
     with pytest.raises(RuntimeError, match="predict_proba"):
         load_artifact(bad_path)
+
+
+def test_unused_inputs_as_policy_rules(valid_payload):
+    policy = load_policy_config()
+    # 1. employment_type: B2B_LT_12M or OTHER -> manual_review soft flag
+    app_b2b, errors = validate_application({**valid_payload, "employment_type": "B2B_LT_12M"})
+    assert not errors
+    res_b2b = evaluate_policy(app_b2b, policy)
+    assert any(flag["id"] == "EMPLOYMENT_TYPE_REVIEW" for flag in res_b2b.soft_flags)
+
+    app_other, errors = validate_application({**valid_payload, "employment_type": "OTHER"})
+    assert not errors
+    res_other = evaluate_policy(app_other, policy)
+    assert any(flag["id"] == "EMPLOYMENT_TYPE_REVIEW" for flag in res_other.soft_flags)
+
+    app_fixed, errors = validate_application({**valid_payload, "employment_type": "UOP_FIXED"})
+    assert not errors
+    res_fixed = evaluate_policy(app_fixed, policy)
+    assert not any(flag["id"] == "EMPLOYMENT_TYPE_REVIEW" for flag in res_fixed.soft_flags)
+
+    # 2. disposable income scales with num_dependents
+    # annual_inc: 36000 -> monthly = 3000. dti=0 -> existing=0. loan=1000, 36m, apr=0 -> payment = 27.78.
+    # cash_left = 3000 - 28 = 2972.
+    # With 0 dependents: min required = 2000 -> deficit = 2972 - 2000 = +972 >= 0 (No hard stop)
+    # With 3 dependents: min required = 2000 + 3*500 = 3500 -> deficit = 2972 - 3500 = -528 < 0 (Hard stop!)
+    low_inc_payload = {
+        **valid_payload,
+        "annual_inc": "36000",
+        "loan_amnt": "1000",
+        "dti": "0",
+        "apr": "0",
+        "num_dependents": "0",
+    }
+    app_dep0, _ = validate_application(low_inc_payload)
+    res_dep0 = evaluate_policy(app_dep0, policy)
+    assert not any(stop["id"] == "DISPOSABLE_INCOME_REVIEW" for stop in res_dep0.hard_stops)
+
+    app_dep3, _ = validate_application({**low_inc_payload, "num_dependents": "3"})
+    res_dep3 = evaluate_policy(app_dep3, policy)
+    assert any(stop["id"] == "DISPOSABLE_INCOME_REVIEW" for stop in res_dep3.hard_stops)
+
+
+def test_currency_conversion_to_model_frame(valid_payload):
+    app, errors = validate_application(valid_payload)
+    assert not errors
+    # Base PLN values
+    frame_pln = app.to_model_frame()
+    assert frame_pln["loan_amnt"].iloc[0] == 12000.0
+    assert frame_pln["annual_inc"].iloc[0] == 72000.0
+
+    # Converted to USD
+    frame_usd = app.to_model_frame(fx_pln_per_usd=4.0)
+    assert frame_usd["loan_amnt"].iloc[0] == 3000.0
+    assert frame_usd["annual_inc"].iloc[0] == 18000.0
+    # Other features unchanged
+    assert frame_usd["dti"].iloc[0] == 18.0
+    assert frame_usd["fico_range_low"].iloc[0] == 710.0
 
 
 def test_corrupt_artifact_and_metadata_mismatch_are_blocked(artifact_path):

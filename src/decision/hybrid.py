@@ -18,12 +18,26 @@ class DecisionResult:
 
 
 def choose_threshold(y_true, probability_default, min_recall_default: float = 0.70) -> float:
-    candidates = sorted(set(float(p) for p in probability_default))
+    import numpy as np
+    from sklearn.metrics import precision_recall_curve
+
+    y_arr = np.asarray(y_true).astype(int)
+    p_arr = np.asarray(probability_default, dtype=float)
+
+    if len(p_arr) > 1000:
+        prec, rec, thresh = precision_recall_curve(y_arr, p_arr)
+        valid = np.where(rec[:-1] >= min_recall_default)[0]
+        if len(valid) == 0:
+            return 0.5
+        best_idx = valid[np.argmax(prec[:-1][valid])]
+        return float(thresh[best_idx])
+
+    candidates = sorted(set(float(p) for p in p_arr))
     best_threshold = 0.5
     best_precision = -1.0
     for threshold in candidates:
-        predicted = [1 if p >= threshold else 0 for p in probability_default]
-        paired = list(zip(y_true, predicted, strict=True))
+        predicted = [1 if p >= threshold else 0 for p in p_arr]
+        paired = list(zip(y_arr, predicted, strict=True))
         tp = sum(1 for y, pred in paired if y == 1 and pred == 1)
         fp = sum(1 for y, pred in paired if y == 0 and pred == 1)
         fn = sum(1 for y, pred in paired if y == 1 and pred == 0)

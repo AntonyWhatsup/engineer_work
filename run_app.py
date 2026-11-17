@@ -5,9 +5,15 @@ import hashlib
 import os
 import subprocess
 import sys
+import tempfile
 import venv
 from collections.abc import Sequence
 from pathlib import Path
+
+# Ensure matplotlib uses a writable cache directory
+os.environ.setdefault("MPLCONFIGDIR", str(Path(tempfile.gettempdir()) / "mplcache"))
+# Suppress pytest cache permission warnings by directing cache to a writable location
+os.environ.setdefault("PYTEST_CACHE_DIR", str(Path(".pytest_cache")))
 
 MIN_PYTHON = (3, 10)
 BOOTSTRAP_ENV = "ENGINEER_WORK_BOOTSTRAPPED"

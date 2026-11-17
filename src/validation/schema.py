@@ -32,8 +32,13 @@ class ValidatedApplication:
     num_dependents: int
     residency_covers_term: bool
 
-    def to_model_frame(self, schema: ModelSchema = DEFAULT_SCHEMA) -> pd.DataFrame:
-        values = {feature: getattr(self, feature) for feature in schema.raw_features}
+    def to_model_frame(self, schema: ModelSchema = DEFAULT_SCHEMA, fx_pln_per_usd: float | None = None) -> pd.DataFrame:
+        values = {}
+        for feature in schema.raw_features:
+            val = getattr(self, feature)
+            if fx_pln_per_usd and fx_pln_per_usd > 0 and feature in {"loan_amnt", "annual_inc"}:
+                val = float(val) / float(fx_pln_per_usd)
+            values[feature] = val
         return pd.DataFrame([values], columns=schema.raw_features)
 
 

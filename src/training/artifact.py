@@ -23,8 +23,15 @@ class ModelArtifact:
     metadata: dict
 
 
-def make_metadata(metrics: dict, threshold: float, policy_version: str, seed: int, model_name: str) -> dict:
-    return {
+def make_metadata(
+    metrics: dict,
+    threshold: float,
+    policy_version: str,
+    seed: int,
+    model_name: str,
+    selection_rationale: str | None = None,
+) -> dict:
+    meta = {
         "artifact_version": REQUIRED_ARTIFACT_VERSION,
         "trained_at": datetime.now(timezone.utc).isoformat(),
         "target_name": DEFAULT_SCHEMA.target_name,
@@ -44,6 +51,9 @@ def make_metadata(metrics: dict, threshold: float, policy_version: str, seed: in
         },
         "metrics": metrics,
     }
+    if selection_rationale is not None:
+        meta["selection_rationale"] = selection_rationale
+    return meta
 
 
 def save_artifact(path: Path | str, artifact: ModelArtifact) -> None:
@@ -128,4 +138,9 @@ def validate_artifact(artifact: ModelArtifact, policy_config: dict | None = None
         if artifact.metadata["policy_version"] != policy_config.get("version"):
             raise RuntimeError("Model policy_version does not match policy config.")
         if float(artifact.metadata["decision_threshold"]) != float(policy_config.get("decision_threshold")):
-            raise RuntimeError("Model decision_threshold does not match policy config and risk bands.")
+            meta_th = float(artifact.metadata["decision_threshold"])
+            policy_th = float(policy_config.get("decision_threshold"))
+            raise RuntimeError(
+                f"Model decision_threshold ({meta_th}) does not match policy config and risk bands ({policy_th}). "
+                "Ensure config/policy_rules.yaml is synchronized with model metadata."
+            )

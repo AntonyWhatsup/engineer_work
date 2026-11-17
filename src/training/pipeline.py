@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
@@ -33,6 +33,7 @@ def candidate_models(seed: int = 42) -> dict[str, object]:
         "random_forest": RandomForestClassifier(
             n_estimators=80, min_samples_leaf=2, class_weight="balanced_subsample", random_state=seed, n_jobs=-1
         ),
+        "hist_gradient_boosting": HistGradientBoostingClassifier(random_state=seed, class_weight="balanced"),
     }
 
 
