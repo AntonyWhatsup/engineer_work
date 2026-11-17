@@ -73,6 +73,10 @@
     .metric-card strong { display: block; margin-top: 5px; font-size: 1.1rem; }
     .progress { height: 8px; background: #253750; border-radius: 999px; overflow: hidden; margin-top: 10px; }
     .progress > span { display: block; height: 100%; width: var(--width); background: linear-gradient(90deg, var(--accent), var(--warn)); border-radius: inherit; }
+    /* Ensure metric cards have equal height and consistent layout */
+    .metric-card { display: flex; flex-direction: column; justify-content: space-between; height: 120px; }
+    /* Add a placeholder progress bar for cards without one to keep alignment */
+    .metric-card .placeholder-progress { height: 8px; background: transparent; margin-top: 10px; }
     .reason-list { margin: 12px 0 0; padding-left: 20px; color: #e8edf5; }
     .shap-row { margin: 15px 0; }
     .shap-meta { display: flex; justify-content: space-between; gap: 10px; font-size: .78rem; margin-bottom: 6px; }
@@ -250,9 +254,9 @@
         <section class="panel">
           <h3 data-i18n="finHeading">Фінансові індикатори</h3>
           <div class="metric-grid">
-            <div class="metric-card"><span data-i18n="cardPayment">Новий місячний платіж</span><strong>{{ result.policy.indicators.new_monthly_payment | round(2) }} PLN</strong></div>
+            <div class="metric-card"><span data-i18n="cardPayment">Новий місячний платіж</span><strong>{{ result.policy.indicators.new_monthly_payment | round(2) }} PLN</strong><div class="placeholder-progress"></div></div>
             <div class="metric-card"><span data-i18n="cardDsti">DSTI після нового кредиту</span><strong>{{ result.policy.indicators.dsti_after_new_loan | round(2) }}%</strong><div class="progress"><span style="--width: {{ dsti_bar_percent }}%"></span></div></div>
-            <div class="metric-card"><span data-i18n="cardCash">Вільний дохід на місяць</span><strong>{{ result.policy.indicators.cash_left | round(2) }} PLN</strong></div>
+            <div class="metric-card"><span data-i18n="cardCash">Вільний дохід на місяць</span><strong>{{ result.policy.indicators.cash_left | round(2) }} PLN</strong><div class="placeholder-progress"></div></div>
           </div>
           {% if result.decision.hard_stop_reasons %}
             <h4 data-i18n="hardStops">Причини зупинки / ручної перевірки</h4>
